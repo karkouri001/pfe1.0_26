@@ -1,0 +1,112 @@
+EXPLICATION DETAILLEE DU PROJET (FICHIER PAR FICHIER)
+
+0) Vue d ensemble
+- Projet Django "plateforme" avec une app "gestion".
+- Base SQLite locale (db.sqlite3).
+- API REST via Django REST framework.
+
+1) Fichiers racine
+- manage.py
+  Role: point d entree des commandes Django (runserver, migrate, createsuperuser, test...).
+  Utilise les settings de "plateforme" par defaut.
+
+- requirements.txt
+  Role: liste des dependances Python installees (Django, djangorestframework, etc.).
+
+- README.md
+  Role: instructions rapides pour installer et lancer le projet.
+
+- db.sqlite3
+  Role: base de donnees locale SQLite (generee apres migrate).
+
+- PFE_CONTEXT.md
+  Role: contraintes et modele du PFE (reference fonctionnelle).
+
+- DOCUMENTATION_PROJET.txt
+  Role: resume des etapes effectuees + architecture rapide + endpoints REST.
+
+- .gitignore
+  Role: fichiers a ne pas versionner (venv, cache Python, db.sqlite3...).
+
+2) Dossier plateforme/ (projet Django)
+- plateforme/settings.py
+  Role: configuration principale.
+  Contenu cle:
+  - INSTALLED_APPS inclut 'rest_framework' et 'gestion'.
+  - LANGUAGE_CODE = 'fr'
+  - TIME_ZONE = 'UTC'
+  - DATABASES: SQLite
+  - DEBUG = True (dev)
+
+- plateforme/urls.py
+  Role: routes globales.
+  - '/' -> page d accueil simple.
+  - '/admin/' -> interface Django admin.
+  - '/api/' -> routes de l app gestion.
+
+- plateforme/asgi.py et plateforme/wsgi.py
+  Role: points d entree pour serveurs ASGI/WSGI (deploiement).
+
+3) Dossier gestion/ (app metier)
+- gestion/models.py
+  Role: definition des modeles (tables DB) + relations.
+  Modeles:
+  - Profil (OneToOne User, role)
+  - GroupeAcademique (nom, annee_academique, membres M2M User)
+  - Examen (titre, description, dates, statut, cree_par, groupes_autorises)
+  - Soumission (trace_id, examen, etudiant, url_depot_git, hash_commit, statut)
+  - Resultat (OneToOne Soumission, note, feedback)
+  - JournalAudit (utilisateur, action, horodatage)
+
+- gestion/admin.py
+  Role: enregistre les modeles dans l admin Django pour gestion CRUD.
+  Ajoute list_display, search_fields, filters simples.
+
+- gestion/serializers.py
+  Role: transforme les modeles en JSON pour l API REST.
+  Utilise ModelSerializer avec fields = '__all__'.
+  Champs en lecture seule:
+  - Soumission: trace_id, soumis_le
+  - Resultat: corrige_le
+
+- gestion/views.py
+  Role: ViewSets REST.
+  - GroupeAcademiqueViewSet
+  - ExamenViewSet
+  - SoumissionViewSet
+  - ResultatViewSet
+  Chaque ViewSet permet CRUD complet.
+
+- gestion/urls.py
+  Role: routes REST de l app.
+  Utilise DefaultRouter pour exposer:
+  - /api/examens/
+  - /api/groupes/
+  - /api/soumissions/
+  - /api/resultats/
+
+- gestion/apps.py
+  Role: configuration de l app (nom, default_auto_field).
+
+- gestion/migrations/0001_initial.py
+  Role: migration initiale (creation des tables et contraintes).
+
+- gestion/tests.py
+  Role: emplacement pour tests unitaires (vide pour l instant).
+
+4) Fonctionnement general (etapes d execution)
+- Lancer le serveur: python manage.py runserver
+- Django charge settings.py
+- URLs globales redirigent /api/ vers gestion/urls.py
+- Les ViewSets exposent les CRUD REST via les serializers
+- Les modeles definissent la structure DB, migrations creent les tables
+
+5) Exemple de flux
+- Un enseignant cree un Examen via POST /api/examens/
+- Un etudiant cree une Soumission via POST /api/soumissions/
+- Un Resultat est associe a une Soumission via POST /api/resultats/
+
+6) Tests unitaires (ou aller)
+- Tests a placer dans gestion/tests.py ou gestion/tests/.
+- Exemple de commande: python manage.py test
+- Le CI/CD (si ajoute) executera ces tests automatiquement.

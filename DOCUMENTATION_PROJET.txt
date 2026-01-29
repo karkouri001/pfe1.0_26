@@ -1,0 +1,233 @@
+DOCUMENTATION PROJET PFE - Plateforme d examens (Django)
+
+1) Etapes realisees par l agent
+- Creation du .gitignore, git init, premier commit
+- Creation du venv .venv et installation de Django + djangorestframework
+- Creation du projet Django "plateforme" et de l app "gestion"
+- Configuration settings.py (INSTALLED_APPS, LANGUAGE_CODE=fr, TIME_ZONE=UTC, DEFAULT_AUTO_FIELD)
+- Creation des modeles (Profil, GroupeAcademique, Examen, Soumission, Resultat, JournalAudit)
+- Ajout admin.py pour gerer les modeles
+- Ajout API REST (serializers, viewsets, router, urls)
+- Ajout route d accueil "/"
+- Migrations + migrate
+- Creation superuser local (admin / admin1234)
+- Generation requirements.txt et README.md
+- Commits et push GitHub
+
+2) Architecture rapide du projet
+- manage.py : commandes Django
+- plateforme/ : settings.py, urls.py, asgi.py, wsgi.py
+- gestion/ : models.py, admin.py, serializers.py, views.py, urls.py, migrations/
+- db.sqlite3 : base SQLite locale
+- requirements.txt : dependances Python
+
+3) Modeles et relations (gestion/models.py)
+- Profil : OneToOne User, role (ETUDIANT/ENSEIGNANT/ADMIN)
+- GroupeAcademique : nom, annee_academique, membres M2M User
+- Examen : titre, description, heure_debut, heure_fin, statut (BROUILLON/PUBLIE/EN_COURS/FERME), cree_par FK User, groupes_autorises M2M GroupeAcademique
+- Soumission : trace_id UUID unique, examen FK Examen, etudiant FK User, url_depot_git, hash_commit, soumis_le auto, statut (EN_ATTENTE/EN_TEST/CORRIGE/ECHEC), unique(examen, etudiant)
+- Resultat : OneToOne Soumission, note, feedback, corrige_le auto
+- JournalAudit : utilisateur FK User nullable, action, horodatage auto
+
+4) API REST (Django REST framework)
+Base: /api/
+Ressources:
+- /api/examens/
+- /api/groupes/
+- /api/soumissions/
+- /api/resultats/
+
+Operations CRUD par ressource:
+- GET /api/<ressource>/        (liste)
+- POST /api/<ressource>/       (creation)
+- GET /api/<ressource>/{id}/   (detail)
+- PUT/PATCH /api/<ressource>/{id}/ (modification)
+- DELETE /api/<ressource>/{id}/ (suppression)
+
+Exemples de payloads JSON:
+Examen:
+{
+  "titre": "Intro Python",
+  "description": "Examen 1",
+  "heure_debut": "2026-01-29T09:00:00Z",
+  "heure_fin": "2026-01-29T11:00:00Z",
+  "statut": "BROUILLON",
+  "cree_par": 1,
+  "groupes_autorises": [1, 2]
+}
+
+Groupe:
+{
+  "nom": "L3 Info",
+  "annee_academique": "2025-2026",
+  "membres": [2, 3]
+}
+
+Soumission:
+{
+  "examen": 1,
+  "etudiant": 2,
+  "url_depot_git": "https://github.com/user/repo.git",
+  "hash_commit": "abc123",
+  "statut": "EN_ATTENTE"
+}
+
+Resultat:
+{
+  "soumission": 1,
+  "note": "14.50",
+  "feedback": "OK"
+}
+
+5) Acces local
+- Accueil: http://127.0.0.1:8000/
+- Admin:   http://127.0.0.1:8000/admin/
+- API:     http://127.0.0.1:8000/api/
+
+6) Lancement local rapide
+- .\.venv\Scripts\python manage.py migrate
+- .\.venv\Scripts\python manage.py runserver
+
+7) Tests unitaires et CI/CD
+- Les tests unitaires font partie du code (ex: gestion/tests.py ou gestion/tests/).
+- On cree des classes de tests (TestCase, APITestCase) selon le domaine (modeles, API, etc).
+- Le CI/CD ne remplace pas les tests: il les execute automatiquement (ex: python manage.py test).
+
+8) Documentation REST API complete (a copier)
+
+Base URL (local):
+- http://127.0.0.1:8000/api/
+
+Format:
+- JSON uniquement
+- URLs avec slash final (ex: /api/examens/)
+
+Ressources:
+- examens
+- groupes
+- soumissions
+- resultats
+
+Authentification / Permissions:
+- Par defaut DRF (aucune restriction configuree dans settings.py).
+- Acces ouvert tant que vous ne changez pas les permissions.
+
+Codes HTTP courants:
+- 200 OK (GET)
+- 201 Created (POST)
+- 204 No Content (DELETE)
+- 400 Bad Request (validation)
+- 404 Not Found (id inexistant)
+
+---
+Ressource: Examens
+
+GET /api/examens/
+-> Liste des examens
+
+POST /api/examens/
+Champs:
+- titre (string, requis)
+- description (string, optionnel)
+- heure_debut (datetime ISO 8601, requis)
+- heure_fin (datetime ISO 8601, requis)
+- statut (string, choix: BROUILLON, PUBLIE, EN_COURS, FERME)
+- cree_par (int, id User, requis)
+- groupes_autorises (liste d ids GroupeAcademique, optionnel)
+
+Exemple POST:
+{
+  "titre": "Intro Python",
+  "description": "Examen 1",
+  "heure_debut": "2026-01-29T09:00:00Z",
+  "heure_fin": "2026-01-29T11:00:00Z",
+  "statut": "BROUILLON",
+  "cree_par": 1,
+  "groupes_autorises": [1, 2]
+}
+
+GET /api/examens/{id}/
+PUT/PATCH /api/examens/{id}/
+DELETE /api/examens/{id}/
+
+---
+Ressource: Groupes Academiques
+
+GET /api/groupes/
+POST /api/groupes/
+Champs:
+- nom (string, requis)
+- annee_academique (string, requis)
+- membres (liste d ids User, optionnel)
+
+Exemple POST:
+{
+  "nom": "L3 Info",
+  "annee_academique": "2025-2026",
+  "membres": [2, 3]
+}
+
+GET /api/groupes/{id}/
+PUT/PATCH /api/groupes/{id}/
+DELETE /api/groupes/{id}/
+
+---
+Ressource: Soumissions
+
+GET /api/soumissions/
+POST /api/soumissions/
+Champs:
+- examen (int, id Examen, requis)
+- etudiant (int, id User, requis)
+- url_depot_git (url, requis)
+- hash_commit (string, requis)
+- statut (string, choix: EN_ATTENTE, EN_TEST, CORRIGE, ECHEC)
+- trace_id (uuid, lecture seule)
+- soumis_le (datetime, lecture seule)
+
+Regle metier:
+- unique(examen, etudiant)
+
+Exemple POST:
+{
+  "examen": 1,
+  "etudiant": 2,
+  "url_depot_git": "https://github.com/user/repo.git",
+  "hash_commit": "abc123",
+  "statut": "EN_ATTENTE"
+}
+
+GET /api/soumissions/{id}/
+PUT/PATCH /api/soumissions/{id}/
+DELETE /api/soumissions/{id}/
+
+---
+Ressource: Resultats
+
+GET /api/resultats/
+POST /api/resultats/
+Champs:
+- soumission (int, id Soumission, requis)
+- note (decimal, requis)
+- feedback (string, optionnel)
+- corrige_le (datetime, lecture seule)
+
+Exemple POST:
+{
+  "soumission": 1,
+  "note": "14.50",
+  "feedback": "OK"
+}
+
+GET /api/resultats/{id}/
+PUT/PATCH /api/resultats/{id}/
+DELETE /api/resultats/{id}/
+
+---
+Exemples d erreurs de validation (HTTP 400)
+Exemple:
+{
+  "examen": [
+    "Ce champ est obligatoire."
+  ]
+}
