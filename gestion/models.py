@@ -1,0 +1,116 @@
+import uuid
+
+from django.conf import settings
+from django.db import models
+
+
+class Profil(models.Model):
+    ROLE_CHOICES = [
+        ("ETUDIANT", "Etudiant"),
+        ("ENSEIGNANT", "Enseignant"),
+        ("ADMIN", "Admin"),
+    ]
+
+    utilisateur = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profil"
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+
+    def __str__(self) -> str:
+        return f"{self.utilisateur.username} ({self.role})"
+
+
+class GroupeAcademique(models.Model):
+    nom = models.CharField(max_length=200)
+    annee_academique = models.CharField(max_length=20)
+    membres = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="groupes_academiques", blank=True
+    )
+
+    def __str__(self) -> str:
+        return f"{self.nom} - {self.annee_academique}"
+
+
+class Examen(models.Model):
+    STATUT_CHOICES = [
+        ("BROUILLON", "Brouillon"),
+        ("PUBLIE", "Publie"),
+        ("EN_COURS", "En cours"),
+        ("FERME", "Ferme"),
+    ]
+
+    titre = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    heure_debut = models.DateTimeField()
+    heure_fin = models.DateTimeField()
+    statut = models.CharField(
+        max_length=20, choices=STATUT_CHOICES, default="BROUILLON"
+    )
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="examens_crees"
+    )
+    groupes_autorises = models.ManyToManyField(
+        GroupeAcademique, related_name="examens", blank=True
+    )
+
+    def __str__(self) -> str:
+        return self.titre
+
+
+class Soumission(models.Model):
+    STATUT_CHOICES = [
+        ("EN_ATTENTE", "En attente"),
+        ("EN_TEST", "En test"),
+        ("CORRIGE", "Corrige"),
+        ("ECHEC", "Echec"),
+    ]
+
+    trace_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    examen = models.ForeignKey(Examen, on_delete=models.CASCADE, related_name="soumissions")
+    etudiant = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="soumissions"
+    )
+    url_depot_git = models.URLField(max_length=500)
+    hash_commit = models.CharField(max_length=100)
+    soumis_le = models.DateTimeField(auto_now_add=True)
+    statut = models.CharField(
+        max_length=20, choices=STATUT_CHOICES, default="EN_ATTENTE"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["examen", "etudiant"],
+                name="unique_soumission_par_etudiant",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.examen.titre} - {self.etudiant.username}"
+
+
+class Resultat(models.Model):
+    soumission = models.OneToOneField(
+        Soumission, on_delete=models.CASCADE, related_name="resultat"
+    )
+    note = models.DecimalField(max_digits=5, decimal_places=2)
+    feedback = models.TextField(blank=True)
+    corrige_le = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"Resultat {self.soumission.trace_id}"
+
+
+class JournalAudit(models.Model):
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="actions_audit",
+    )
+    action = models.CharField(max_length=255)
+    horodatage = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.horodatage} - {self.action}"
