@@ -89,9 +89,13 @@ Resultat:
 - .\.venv\Scripts\python manage.py runserver
 
 7) Tests unitaires et CI/CD
-- Les tests unitaires font partie du code (ex: gestion/tests.py ou gestion/tests/).
-- On cree des classes de tests (TestCase, APITestCase) selon le domaine (modeles, API, etc).
-- Le CI/CD ne remplace pas les tests: il les execute automatiquement (ex: python manage.py test).
+- Tests unitaires BACKEND: ils sont ecrits par l equipe dev dans le code (ex: gestion/tests.py).
+- Ces tests valident la logique API/Modeles de la plateforme et tournent avec python manage.py test.
+- Tests de CORRECTION par examen: ils sont fournis par chaque enseignant via un repo Git (url_tests_git + hash_tests optionnel).
+- Flux: l enseignant cree un examen avec url_tests_git -> l etudiant soumet son depot ->
+  le CI clone le repo etudiant + le repo de tests -> execute -> envoie le resultat via /api/webhook/resultats/.
+- Le webhook cree/met a jour Resultat et met a jour Soumission.statut.
+- Le CI/CD orchestrera ces deux types de tests sans les melanger.
 
 8) Documentation REST API complete (a copier)
 
@@ -133,6 +137,8 @@ Champs:
 - heure_fin (datetime ISO 8601, requis)
 - statut (string, choix: BROUILLON, PUBLIE, EN_COURS, FERME)
 - cree_par (int, id User, requis)
+- url_tests_git (string URL, optionnel)
+- hash_tests (string, commit optionnel)
 - groupes_autorises (liste d ids GroupeAcademique, optionnel)
 
 Exemple POST:
@@ -143,6 +149,8 @@ Exemple POST:
   "heure_fin": "2026-01-29T11:00:00Z",
   "statut": "BROUILLON",
   "cree_par": 1,
+  "url_tests_git": "https://github.com/enseignant/tests.git",
+  "hash_tests": "abc123",
   "groupes_autorises": [1, 2]
 }
 

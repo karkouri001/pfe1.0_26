@@ -49,6 +49,8 @@ class Examen(models.Model):
     cree_par = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="examens_crees"
     )
+    url_tests_git = models.URLField(blank=True, null=True)
+    hash_tests = models.CharField(max_length=40, blank=True)
     groupes_autorises = models.ManyToManyField(
         GroupeAcademique, related_name="examens", blank=True
     )

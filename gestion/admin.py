@@ -25,10 +25,29 @@ class GroupeAcademiqueAdmin(admin.ModelAdmin):
 
 @admin.register(Examen)
 class ExamenAdmin(admin.ModelAdmin):
-    list_display = ("titre", "statut", "heure_debut", "heure_fin", "cree_par")
+    list_display = (
+        "titre",
+        "statut",
+        "heure_debut",
+        "heure_fin",
+        "cree_par",
+        "url_tests_git",
+        "hash_tests",
+    )
     list_filter = ("statut",)
     search_fields = ("titre", "cree_par__username")
     filter_horizontal = ("groupes_autorises",)
+    fields = (
+        "titre",
+        "description",
+        "heure_debut",
+        "heure_fin",
+        "statut",
+        "cree_par",
+        "url_tests_git",
+        "hash_tests",
+        "groupes_autorises",
+    )
 
 
 @admin.register(Soumission)
