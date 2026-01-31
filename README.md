@@ -7,9 +7,29 @@
 ## Installation rapide
 1. python -m venv .venv
 2. .\.venv\Scripts\pip install -r requirements.txt
-3. .\.venv\Scripts\python manage.py migrate
-4. .\.venv\Scripts\python manage.py createsuperuser
-5. .\.venv\Scripts\python manage.py runserver
+3. Configurer MySQL (voir section suivante)
+4. .\.venv\Scripts\python manage.py makemigrations
+5. .\.venv\Scripts\python manage.py migrate
+6. .\.venv\Scripts\python manage.py createsuperuser
+7. .\.venv\Scripts\python manage.py runserver
+
+## Configuration MySQL
+Creer la base (exemple simple) :
+```sql
+CREATE DATABASE plateforme_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Definir les variables d environnement (PowerShell) :
+```powershell
+$env:DB_NAME="plateforme_db"
+$env:DB_USER="root"
+$env:DB_PASSWORD=""
+$env:DB_HOST="127.0.0.1"
+$env:DB_PORT="3306"
+```
+
+Vous pouvez aussi copier `.env.example` vers `.env` si vous utilisez un outil qui charge les variables d environnement.
+Sur Windows, PyMySQL est utilise automatiquement si mysqlclient n est pas disponible.
 
 ## Acces
 - Admin: http://127.0.0.1:8000/admin/
