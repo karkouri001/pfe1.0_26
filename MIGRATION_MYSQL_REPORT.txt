@@ -1,0 +1,23 @@
+FICHIERS MODIFIES / CREES
+- .env.example (cree)
+- .gitignore (modifie)
+- README.md (modifie)
+- plateforme/__init__.py (modifie)
+- plateforme/settings.py (modifie)
+- requirements.txt (modifie)
+
+RESUME DES CHANGEMENTS
+- Passage de SQLite a MySQL avec variables d environnement et charset utf8mb4.
+- Ajout des dependances MySQL avec fallback PyMySQL sur Windows.
+- Ajout d un .env.example et ignore .env dans Git.
+- Mise a jour du README avec les etapes MySQL.
+
+COMMANDES A EXECUTER / REEXECUTER
+- python manage.py check
+- python manage.py makemigrations
+- python manage.py migrate
+
+NOTE
+- Les commandes ci-dessus ont echoue ici car les drivers MySQL (mysqlclient / PyMySQL)
+  ne sont pas installes dans l environnement local. Apres installation des dependances
+  et creation de la base, relancez les commandes.
