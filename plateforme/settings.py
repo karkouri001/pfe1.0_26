@@ -13,18 +13,32 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+if load_dotenv:
+    load_dotenv(BASE_DIR / ".env")
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-%0pqo@k#@#ygwykr%gpp!l=h+py^44#7h3ao5c$g93mcyu8d%a'
+SECRET_KEY = os.environ.get("SECRET_KEY", "change_me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool("DEBUG", True)
 
 ALLOWED_HOSTS = []
 
@@ -128,4 +142,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-API_WEBHOOK_TOKEN = os.environ.get("API_WEBHOOK_TOKEN", "CHANGE_ME")
+API_WEBHOOK_TOKEN = os.environ.get("API_WEBHOOK_TOKEN", "change_me")

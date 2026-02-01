@@ -10,7 +10,7 @@ DOCUMENTATION PROJET PFE - Plateforme d examens (Django)
 - Ajout API REST (serializers, viewsets, router, urls)
 - Ajout route d accueil "/"
 - Migrations + migrate
-- Creation superuser local (admin / admin1234)
+- Creation superuser local (identifiants a definir)
 - Generation requirements.txt et README.md
 - Commits et push GitHub
 

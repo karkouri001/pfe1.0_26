@@ -3,5 +3,6 @@ Django==6.0.1
 djangorestframework==3.16.1
 mysqlclient; platform_system != "Windows"
 PyMySQL; platform_system == "Windows"
+python-dotenv==1.0.1
 sqlparse==0.5.5
 tzdata==2025.3
