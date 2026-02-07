@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <style>
+    .box { fill: #f8f9fb; stroke: #333; stroke-width: 1.5; }
+    .title { font: bold 14px Arial, sans-serif; }
+    .field { font: 12px Arial, sans-serif; }
+    .line { stroke: #333; stroke-width: 1.2; }
+    .label { font: 11px Arial, sans-serif; fill: #222; }
+  </style>
+
+  <!-- AuthUser -->
+  <rect class="box" x="40" y="40" width="240" height="140" rx="6" />
+  <text class="title" x="52" y="62">AUTH_USER</text>
+  <text class="field" x="52" y="84">id (PK)</text>
+  <text class="field" x="52" y="102">username</text>
+  <text class="field" x="52" y="120">email</text>
+  <text class="field" x="52" y="138">password</text>
+
+  <!-- Profil -->
+  <rect class="box" x="320" y="40" width="220" height="110" rx="6" />
+  <text class="title" x="332" y="62">PROFIL</text>
+  <text class="field" x="332" y="84">id (PK)</text>
+  <text class="field" x="332" y="102">utilisateur_id (FK)</text>
+  <text class="field" x="332" y="120">role</text>
+
+  <!-- Journal Audit -->
+  <rect class="box" x="600" y="40" width="240" height="120" rx="6" />
+  <text class="title" x="612" y="62">JOURNAL_AUDIT</text>
+  <text class="field" x="612" y="84">id (PK)</text>
+  <text class="field" x="612" y="102">utilisateur_id (FK)</text>
+  <text class="field" x="612" y="120">action</text>
+  <text class="field" x="612" y="138">horodatage</text>
+
+  <!-- Groupe Academique -->
+  <rect class="box" x="40" y="220" width="240" height="110" rx="6" />
+  <text class="title" x="52" y="242">GROUPE_ACADEMIQUE</text>
+  <text class="field" x="52" y="264">id (PK)</text>
+  <text class="field" x="52" y="282">nom</text>
+  <text class="field" x="52" y="300">annee_academique</text>
+
+  <!-- Groupe Membres -->
+  <rect class="box" x="320" y="220" width="240" height="110" rx="6" />
+  <text class="title" x="332" y="242">GROUPE_MEMBRES</text>
+  <text class="field" x="332" y="264">id (PK)</text>
+  <text class="field" x="332" y="282">groupe_id (FK)</text>
+  <text class="field" x="332" y="300">utilisateur_id (FK)</text>
+
+  <!-- Examen -->
+  <rect class="box" x="40" y="400" width="280" height="180" rx="6" />
+  <text class="title" x="52" y="422">EXAMEN</text>
+  <text class="field" x="52" y="444">id (PK)</text>
+  <text class="field" x="52" y="462">cree_par_id (FK)</text>
+  <text class="field" x="52" y="480">titre</text>
+  <text class="field" x="52" y="498">heure_debut</text>
+  <text class="field" x="52" y="516">heure_fin</text>
+  <text class="field" x="52" y="534">url_tests_git</text>
+  <text class="field" x="52" y="552">hash_tests</text>
+  <text class="field" x="52" y="570">pdf_examen</text>
+
+  <!-- Examen Groupes -->
+  <rect class="box" x="360" y="420" width="240" height="110" rx="6" />
+  <text class="title" x="372" y="442">EXAMEN_GROUPES</text>
+  <text class="field" x="372" y="464">id (PK)</text>
+  <text class="field" x="372" y="482">examen_id (FK)</text>
+  <text class="field" x="372" y="500">groupe_id (FK)</text>
+
+  <!-- Soumission -->
+  <rect class="box" x="660" y="400" width="280" height="180" rx="6" />
+  <text class="title" x="672" y="422">SOUMISSION</text>
+  <text class="field" x="672" y="444">id (PK)</text>
+  <text class="field" x="672" y="462">examen_id (FK)</text>
+  <text class="field" x="672" y="480">etudiant_id (FK)</text>
+  <text class="field" x="672" y="498">code_source</text>
+  <text class="field" x="672" y="516">url_depot_git</text>
+  <text class="field" x="672" y="534">hash_commit</text>
+  <text class="field" x="672" y="552">soumis_le</text>
+  <text class="field" x="672" y="570">statut</text>
+
+  <!-- Resultat -->
+  <rect class="box" x="980" y="420" width="220" height="110" rx="6" />
+  <text class="title" x="992" y="442">RESULTAT</text>
+  <text class="field" x="992" y="464">id (PK)</text>
+  <text class="field" x="992" y="482">soumission_id (FK)</text>
+  <text class="field" x="992" y="500">note</text>
+  <text class="field" x="992" y="518">feedback</text>
+
+  <!-- Relationships -->
+  <line class="line" x1="280" y1="80" x2="320" y2="80" />
+  <text class="label" x="286" y="72">1-1</text>
+
+  <line class="line" x1="280" y1="260" x2="320" y2="260" />
+  <text class="label" x="286" y="252">1-N</text>
+
+  <line class="line" x1="160" y1="330" x2="160" y2="400" />
+  <text class="label" x="170" y="370">1-N</text>
+
+  <line class="line" x1="180" y1="470" x2="360" y2="470" />
+  <text class="label" x="250" y="458">N-N</text>
+
+  <line class="line" x1="320" y1="500" x2="660" y2="500" />
+  <text class="label" x="500" y="488">1-N</text>
+
+  <line class="line" x1="940" y1="480" x2="980" y2="480" />
+  <text class="label" x="946" y="472">1-1</text>
+
+  <line class="line" x1="720" y1="160" x2="720" y2="400" />
+  <text class="label" x="730" y="260">1-N</text>
+</svg>

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'gestion',
+    'ui',
 ]
 
 MIDDLEWARE = [
@@ -139,7 +140,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 API_WEBHOOK_TOKEN = os.environ.get("API_WEBHOOK_TOKEN", "change_me")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
+GITHUB_BASE_BRANCH = os.environ.get("GITHUB_BASE_BRANCH", "main")
+GITHUB_SOLUTIONS_PATH = os.environ.get("GITHUB_SOLUTIONS_PATH", "solutions")
+
+LOGIN_URL = "/connexion/"
+LOGIN_REDIRECT_URL = "/"   # on passe par home() qui redirige selon le rôle
+LOGOUT_REDIRECT_URL = "/connexion/"

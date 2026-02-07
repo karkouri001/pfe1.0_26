@@ -1,4 +1,4 @@
-# Documentation REST API (detaillee)
+b# Documentation REST API (detaillee)
 
 Objectif
 Ce fichier explique, ligne par ligne, les parties REST API les plus importantes
@@ -93,7 +93,7 @@ Raisons des regles d acces:
 - Un etudiant ne peut soumettre qu une seule fois par examen.
 - Les resultats sont sensibles: seules les personnes autorisees
   peuvent les modifier.
-- Le webhook doit etre protegé par un token partage.
+- Le webhook doit etre protege par un token partage.
 
 --------------------------------------------------------------------------------
 Exemples concrets (simplifies)
@@ -133,6 +133,7 @@ POST /api/soumissions/
 Body JSON:
 {
   "examen": 1,
+  "code_source": "print('hello')",
   "url_depot_git": "https://...",
   "hash_commit": "ff00aa"
 }
@@ -140,7 +141,7 @@ Reponse:
 201 Created
 { ... soumission creee ... }
 Erreurs possibles:
-- 403 si pas dans le groupe autorise
+- 400 si pas dans le groupe autorise (validation serializer)
 - 400 si hors delai
 - 400 si deja soumis
 
@@ -175,7 +176,8 @@ Base: /api/
 - /api/webhook/resultats/-> ResultatWebhookAPIView (POST only)
 
 Regles d acces (resume):
-- Groupes: pas de permission explicite ici -> utilise la config DRF globale.
+- Groupes: pas de permission explicite ici -> utilise la config DRF globale
+  (AllowAny par defaut).
 - Examens: authentifie + enseignant/admin pour les ecritures.
 - Soumissions: authentifie.
 - Resultats: authentifie + enseignant/admin pour les ecritures.
@@ -233,7 +235,7 @@ L28 `return attrs`
 
 L31 `class SoumissionSerializer(serializers.ModelSerializer):`
     Serializer pour Soumission avec validation d acces.
-L32 `class Meta:`
+L32 `class Me ta:`
     Meta du serializer.
 L33 `model = Soumission`
     Modele cible.
@@ -257,6 +259,14 @@ L41 `if not user or not user.is_authenticated:`
     Interdit une soumission anonyme.
 L42 `raise serializers.ValidationError("Authentification requise.")`
     Message d erreur clair.
+L43 `code_source = (attrs.get("code_source") or "").strip()`
+    Recuperation du code source (si fourni).
+L44 `url_depot_git = (attrs.get("url_depot_git") or "").strip()`
+    Recuperation du depot Git (si fourni).
+L45 `if not code_source and not url_depot_git:`
+    Exige soit un code source, soit un depot Git.
+L46 `raise serializers.ValidationError(...)`
+    Message d erreur si aucun contenu fourni.
 L43 `if not examen:`
     Si aucun examen fourni (cas limite), on valide sans control.
 L44 `return attrs`
@@ -377,7 +387,7 @@ L24 `permission_classes = [IsAuthenticated, IsEnseignantOrAdmin]`
     - Auth obligatoire pour tout.
     - Ecritures reservees enseignant/admin.
 
-L26 `def get_queryset(self):`
+L26 `def get_queryset(self):`   
     Customise les examens visibles selon le role.
 L27 `queryset = super().get_queryset()`
     Commence avec la requete de base.

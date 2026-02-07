@@ -1,0 +1,42 @@
+{% extends "ui/base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block body %}
+<div class="container d-flex align-items-center" style="min-height:100vh;">
+  <div class="row justify-content-center w-100">
+    <div class="col-12 col-md-7 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h4 mb-1">Connexion</h1>
+          <p class="text-secondary small mb-4">Session Django • HTML + Bootstrap</p>
+
+          {% if form.errors %}
+            <div class="alert alert-danger small">Identifiants incorrects.</div>
+          {% endif %}
+
+          {% if messages %}
+            {% for m in messages %}
+              <div class="alert alert-{{ m.tags }} small">{{ m }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Nom d’utilisateur</label>
+              <input class="form-control" name="username" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Mot de passe</label>
+              <input class="form-control" type="password" name="password" required>
+            </div>
+            <button class="btn btn-primary w-100">Se connecter</button>
+          </form>
+        </div>
+      </div>
+      <div class="text-center text-secondary small mt-3">
+        Admin: <span class="font-monospace">/admin</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

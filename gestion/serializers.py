@@ -18,6 +18,10 @@ class ExamenSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance
+        if not instance and not attrs.get("pdf_examen"):
+            raise serializers.ValidationError(
+                "Le PDF de l examen est obligatoire."
+            )
         if instance and instance.statut != "BROUILLON":
             url_tests_git = attrs.get("url_tests_git", instance.url_tests_git)
             hash_tests = attrs.get("hash_tests", instance.hash_tests)
@@ -40,6 +44,12 @@ class SoumissionSerializer(serializers.ModelSerializer):
         examen = attrs.get("examen") or getattr(self.instance, "examen", None)
         if not user or not user.is_authenticated:
             raise serializers.ValidationError("Authentification requise.")
+        code_source = (attrs.get("code_source") or "").strip()
+        url_depot_git = (attrs.get("url_depot_git") or "").strip()
+        if not code_source and not url_depot_git:
+            raise serializers.ValidationError(
+                "Vous devez fournir un code source ou un depot Git."
+            )
         if not examen:
             return attrs
         if not examen.groupes_autorises.filter(membres=user).exists():
