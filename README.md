@@ -48,6 +48,16 @@ DB_PORT=3306
 - Admin: http://127.0.0.1:8000/admin/
 - API: http://127.0.0.1:8000/api/
 
+## Connexion OAuth (auto-login via email)
+- La page `/connexion/` accepte maintenant `username` ou `email`.
+- Callback OAuth: `/connexion/oauth-email/?email=<email>&ts=<unix>&sig=<signature>`
+- Variables requises:
+  - `OAUTH_EMAIL_AUTOLOGIN_SECRET` (secret partage avec le service OAuth)
+  - `OAUTH_EMAIL_MAX_AGE_SECONDS` (par defaut `300`)
+- Calcul de signature attendu:
+  - `signature = HMAC_SHA256_HEX(f"{email}:{ts}", OAUTH_EMAIL_AUTOLOGIN_SECRET)`
+- Si aucun compte local actif ne correspond a l'email, la connexion est refusee.
+
 ## Endpoints REST
 - /api/examens/
 - /api/groupes/

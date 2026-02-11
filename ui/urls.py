@@ -1,4 +1,3 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views
@@ -7,10 +6,11 @@ app_name = "ui"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("connexion/", views.EmailLoginView.as_view(), name="login"),
     path(
-        "connexion/",
-        auth_views.LoginView.as_view(template_name="ui/login.html"),
-        name="login",
+        "connexion/oauth-email/",
+        views.OAuthEmailAutoLoginView.as_view(),
+        name="oauth_email_login",
     ),
     path("deconnexion/", views.logout_view, name="logout"),
     path("etudiant/", views.etudiant_dashboard, name="etudiant_dashboard"),

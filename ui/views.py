@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import hmac
 import json
 from functools import wraps
 from urllib.error import HTTPError, URLError
@@ -7,14 +9,17 @@ from urllib.request import Request, urlopen
 from django.conf import settings
 
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views import View
 
 from gestion.models import Examen, Resultat, Soumission
 from gestion.serializers import SoumissionSerializer
-from .forms import ExamenForm
+from .forms import EmailOrUsernameAuthenticationForm, ExamenForm
 
 
 def _role(user) -> str:
@@ -41,6 +46,80 @@ def role_required(*roles):
         return _wrapped
 
     return deco
+
+
+def _safe_next_url(request, next_url):
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return settings.LOGIN_REDIRECT_URL
+
+
+def _oauth_signature_is_valid(email, timestamp, signature):
+    secret = getattr(settings, "OAUTH_EMAIL_AUTOLOGIN_SECRET", "")
+    if not secret:
+        return False, "Configuration OAuth manquante (OAUTH_EMAIL_AUTOLOGIN_SECRET)."
+
+    try:
+        issued_at = int(timestamp)
+    except (TypeError, ValueError):
+        return False, "Parametre ts invalide."
+
+    max_age = int(getattr(settings, "OAUTH_EMAIL_MAX_AGE_SECONDS", 300))
+    now = int(timezone.now().timestamp())
+    if abs(now - issued_at) > max_age:
+        return False, "Lien OAuth expire."
+
+    payload = f"{email}:{issued_at}".encode("utf-8")
+    expected = hmac.new(secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, (signature or "").strip().lower()):
+        return False, "Signature OAuth invalide."
+
+    return True, ""
+
+
+class EmailLoginView(LoginView):
+    template_name = "ui/login.html"
+    form_class = EmailOrUsernameAuthenticationForm
+    redirect_authenticated_user = True
+
+
+class OAuthEmailAutoLoginView(View):
+    def get(self, request):
+        email = (request.GET.get("email") or "").strip().lower()
+        timestamp = (request.GET.get("ts") or "").strip()
+        signature = (request.GET.get("sig") or "").strip()
+        target_url = _safe_next_url(request, request.GET.get("next"))
+
+        if not email or not timestamp or not signature:
+            messages.error(request, "Lien OAuth incomplet (email/ts/sig).")
+            return redirect("ui:login")
+
+        ok, error = _oauth_signature_is_valid(email, timestamp, signature)
+        if not ok:
+            messages.error(request, error)
+            return redirect("ui:login")
+
+        user_model = get_user_model()
+        users = list(
+            user_model._default_manager.filter(email__iexact=email, is_active=True)[:2]
+        )
+        if len(users) == 1:
+            login(request, users[0], backend="django.contrib.auth.backends.ModelBackend")
+            messages.success(request, "Connexion OAuth reussie.")
+            return redirect(target_url)
+
+        if not users:
+            messages.error(request, "Aucun compte local actif pour cet email.")
+        else:
+            messages.error(
+                request,
+                "Plusieurs comptes utilisent cet email. Utilisez username + mot de passe.",
+            )
+        return redirect("ui:login")
 
 
 def _github_headers():

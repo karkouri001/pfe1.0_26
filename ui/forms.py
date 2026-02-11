@@ -1,6 +1,45 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import AuthenticationForm
 
 from gestion.models import Examen
+
+
+class EmailOrUsernameAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(
+        label="Email ou nom d'utilisateur",
+        max_length=254,
+        widget=forms.TextInput(attrs={"autofocus": True, "class": "form-control"}),
+    )
+    password = forms.CharField(
+        label="Mot de passe",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"autocomplete": "current-password", "class": "form-control"}
+        ),
+    )
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "multiple_email_accounts": "Plusieurs comptes sont lies a cet email.",
+    }
+
+    def clean(self):
+        identifier = (self.cleaned_data.get("username") or "").strip()
+        if identifier and "@" in identifier:
+            user_model = get_user_model()
+            matches = list(
+                user_model._default_manager.filter(email__iexact=identifier).only("username")[:2]
+            )
+            if len(matches) == 1:
+                self.cleaned_data["username"] = matches[0].get_username()
+            elif len(matches) > 1:
+                raise forms.ValidationError(
+                    self.error_messages["multiple_email_accounts"],
+                    code="multiple_email_accounts",
+                )
+
+        return super().clean()
 
 
 class ExamenForm(forms.ModelForm):

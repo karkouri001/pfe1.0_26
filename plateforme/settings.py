@@ -31,6 +31,16 @@ def env_bool(name, default=False):
     return value.strip().lower() in ("1", "true", "yes", "on")
 
 
+def env_int(name, default=0):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -90,19 +100,28 @@ WSGI_APPLICATION = 'plateforme.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'plateforme_db'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+# Utilise SQLite en développement, MySQL en production
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('DB_NAME', 'plateforme_db'),
+            'USER': os.environ.get('DB_USER', 'root'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('DB_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 
 # Password validation
@@ -150,6 +169,8 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 GITHUB_BASE_BRANCH = os.environ.get("GITHUB_BASE_BRANCH", "main")
 GITHUB_SOLUTIONS_PATH = os.environ.get("GITHUB_SOLUTIONS_PATH", "solutions")
+OAUTH_EMAIL_AUTOLOGIN_SECRET = os.environ.get("OAUTH_EMAIL_AUTOLOGIN_SECRET", "")
+OAUTH_EMAIL_MAX_AGE_SECONDS = env_int("OAUTH_EMAIL_MAX_AGE_SECONDS", 300)
 
 LOGIN_URL = "/connexion/"
 LOGIN_REDIRECT_URL = "/"   # on passe par home() qui redirige selon le rôle

@@ -7,7 +7,6 @@
       <div class="card shadow-sm">
         <div class="card-body p-4">
           <h1 class="h4 mb-1">Connexion</h1>
-          <p class="text-secondary small mb-4">Session Django • HTML + Bootstrap</p>
 
           {% if form.errors %}
             <div class="alert alert-danger small">Identifiants incorrects.</div>
@@ -21,9 +20,18 @@
 
           <form method="post">
             {% csrf_token %}
+            {% if next %}
+              <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
             <div class="mb-3">
-              <label class="form-label">Nom d’utilisateur</label>
-              <input class="form-control" name="username" required>
+              <label class="form-label">Email ou nom d'utilisateur</label>
+              <input
+                class="form-control"
+                name="username"
+                value="{{ form.username.value|default:'' }}"
+                required
+                autofocus
+              >
             </div>
             <div class="mb-3">
               <label class="form-label">Mot de passe</label>
@@ -32,9 +40,6 @@
             <button class="btn btn-primary w-100">Se connecter</button>
           </form>
         </div>
-      </div>
-      <div class="text-center text-secondary small mt-3">
-        Admin: <span class="font-monospace">/admin</span>
       </div>
     </div>
   </div>
