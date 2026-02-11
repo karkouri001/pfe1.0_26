@@ -7,11 +7,7 @@ app_name = "ui"
 urlpatterns = [
     path("", views.home, name="home"),
     path("connexion/", views.EmailLoginView.as_view(), name="login"),
-    path(
-        "connexion/oauth-email/",
-        views.OAuthEmailAutoLoginView.as_view(),
-        name="oauth_email_login",
-    ),
+    path("connexion/oauth-email/", views.OAuthEmailAutoLoginView.as_view(), name="oauth_email_login"),
     path("deconnexion/", views.logout_view, name="logout"),
     path("etudiant/", views.etudiant_dashboard, name="etudiant_dashboard"),
     path("etudiant/examens/", views.etudiant_examens, name="etudiant_examens"),

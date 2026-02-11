@@ -28,6 +28,7 @@ urlpatterns = [
     path("", include("ui.urls")),
     path("admin/", admin.site.urls),
     path("api/", include("gestion.urls")),
+    path("accounts/", include("allauth.urls")),
 ]
 
 if settings.DEBUG:

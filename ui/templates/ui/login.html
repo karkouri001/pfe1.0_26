@@ -1,4 +1,5 @@
 {% extends "ui/base.html" %}
+{% load socialaccount %}
 {% block title %}Connexion{% endblock %}
 {% block body %}
 <div class="container d-flex align-items-center" style="min-height:100vh;">
@@ -39,6 +40,20 @@
             </div>
             <button class="btn btn-primary w-100">Se connecter</button>
           </form>
+          <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1">
+            <span class="mx-2 text-secondary small">ou</span>
+            <hr class="flex-grow-1">
+          </div>
+          {% if google_oauth_configured %}
+            <a class="btn btn-outline-danger w-100" href="{% provider_login_url 'google' %}">
+              Se connecter avec Google
+            </a>
+          {% else %}
+            <div class="alert alert-secondary small mb-0">
+              Connexion Google non configuree. Ajoutez un SocialApp Google dans l'admin.
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>

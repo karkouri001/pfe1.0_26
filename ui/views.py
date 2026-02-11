@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.contrib.sites.shortcuts import get_current_site
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -20,6 +21,16 @@ from django.views import View
 from gestion.models import Examen, Resultat, Soumission
 from gestion.serializers import SoumissionSerializer
 from .forms import EmailOrUsernameAuthenticationForm, ExamenForm
+
+
+def _google_oauth_configured(request) -> bool:
+    try:
+        from allauth.socialaccount.models import SocialApp
+
+        current_site = get_current_site(request)
+        return SocialApp.objects.filter(provider="google", sites=current_site).exists()
+    except Exception:
+        return False
 
 
 def _role(user) -> str:
@@ -85,6 +96,11 @@ class EmailLoginView(LoginView):
     template_name = "ui/login.html"
     form_class = EmailOrUsernameAuthenticationForm
     redirect_authenticated_user = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["google_oauth_configured"] = _google_oauth_configured(self.request)
+        return context
 
 
 class OAuthEmailAutoLoginView(View):

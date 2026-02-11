@@ -16,6 +16,9 @@ class Profil(models.Model):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
+    class Meta:
+        db_table = "Profil"
+
     def __str__(self) -> str:
         return f"{self.utilisateur.username} ({self.role})"
 
@@ -26,6 +29,9 @@ class GroupeAcademique(models.Model):
     membres = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="groupes_academiques", blank=True
     )
+
+    class Meta:
+        db_table = "GroupeAcademique"
 
     def __str__(self) -> str:
         return f"{self.nom} - {self.annee_academique}"
@@ -60,6 +66,9 @@ class Examen(models.Model):
         GroupeAcademique, related_name="examens", blank=True
     )
 
+    class Meta:
+        db_table = "Examen"
+
     def __str__(self) -> str:
         return self.titre
 
@@ -86,6 +95,7 @@ class Soumission(models.Model):
     )
 
     class Meta:
+        db_table = "Soumission"
         constraints = [
             models.UniqueConstraint(
                 fields=["examen", "etudiant"],
@@ -105,6 +115,9 @@ class Resultat(models.Model):
     feedback = models.TextField(blank=True)
     corrige_le = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = "Resultat"
+
     def __str__(self) -> str:
         return f"Resultat {self.soumission.trace_id}"
 
@@ -119,6 +132,9 @@ class JournalAudit(models.Model):
     )
     action = models.CharField(max_length=255)
     horodatage = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "JournalAudit"
 
     def __str__(self) -> str:
         return f"{self.horodatage} - {self.action}"
