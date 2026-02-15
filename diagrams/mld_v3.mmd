@@ -1,0 +1,163 @@
+erDiagram
+    AUTH_USER {
+        BIGINT id PK
+        VARCHAR username UK
+        VARCHAR email
+        VARCHAR password_hash
+        BOOLEAN is_active
+        DATETIME last_login
+        DATETIME date_joined
+    }
+
+    PROFIL {
+        BIGINT id PK
+        BIGINT utilisateur_id FK_UK
+        ENUM role "ETUDIANT|ENSEIGNANT|ADMIN"
+    }
+
+    GROUPE_ACADEMIQUE {
+        BIGINT id PK
+        VARCHAR nom
+        VARCHAR annee_academique
+    }
+
+    GROUPE_ACADEMIQUE_MEMBRES {
+        BIGINT id PK
+        BIGINT groupeacademique_id FK
+        BIGINT user_id FK
+        DATETIME date_ajout
+    }
+
+    EXAMEN {
+        BIGINT id PK
+        VARCHAR titre
+        TEXT description
+        DATETIME heure_debut
+        DATETIME heure_fin
+        ENUM statut "BROUILLON|PUBLIE|EN_COURS|FERME"
+        BIGINT cree_par_id FK
+        VARCHAR url_tests_git NULL
+        CHAR hash_tests_40
+        VARCHAR pdf_examen NULL
+    }
+
+    EXAMEN_GROUPES_AUTORISES {
+        BIGINT id PK
+        BIGINT examen_id FK
+        BIGINT groupeacademique_id FK
+    }
+
+    SOUMISSION {
+        BIGINT id PK
+        UUID trace_id UK
+        BIGINT examen_id FK
+        BIGINT etudiant_id FK
+        VARCHAR url_depot_git NULL
+        VARCHAR hash_commit
+        TEXT code_source
+        DATETIME soumis_le
+        ENUM statut "EN_ATTENTE|EN_TEST|CORRIGE|ECHEC"
+    }
+
+    RESULTAT {
+        BIGINT id PK
+        BIGINT soumission_id FK_UK
+        DECIMAL note_5_2
+        TEXT feedback
+        DATETIME corrige_le
+    }
+
+    JOURNAL_AUDIT {
+        BIGINT id PK
+        BIGINT utilisateur_id FK_NULL
+        VARCHAR action
+        DATETIME horodatage
+    }
+
+    ACCOUNT_EMAILADDRESS {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR email
+        BOOLEAN verified
+        BOOLEAN primary
+    }
+
+    ACCOUNT_EMAILCONFIRMATION {
+        BIGINT id PK
+        BIGINT email_address_id FK
+        VARCHAR key
+        DATETIME created
+        DATETIME sent
+    }
+
+    DJANGO_SITE {
+        BIGINT id PK
+        VARCHAR domain
+        VARCHAR name
+    }
+
+    SOCIALACCOUNT_SOCIALAPP {
+        BIGINT id PK
+        VARCHAR provider
+        VARCHAR name
+        VARCHAR client_id
+        VARCHAR secret
+        VARCHAR key NULL
+        JSON settings
+    }
+
+    SOCIALACCOUNT_SOCIALACCOUNT {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR provider
+        VARCHAR uid
+        DATETIME last_login
+        DATETIME date_joined
+        JSON extra_data
+    }
+
+    SOCIALACCOUNT_SOCIALTOKEN {
+        BIGINT id PK
+        BIGINT app_id FK
+        BIGINT account_id FK
+        TEXT token
+        TEXT token_secret NULL
+        DATETIME expires_at NULL
+    }
+
+    SOCIALACCOUNT_SOCIALAPP_SITES {
+        BIGINT id PK
+        BIGINT socialapp_id FK
+        BIGINT site_id FK
+    }
+
+    AUTH_USER ||--o| PROFIL : "1..1 role applicatif"
+    AUTH_USER ||--o{ JOURNAL_AUDIT : "declenche actions"
+    AUTH_USER ||--o{ EXAMEN : "cree"
+    AUTH_USER ||--o{ SOUMISSION : "depose"
+
+    GROUPE_ACADEMIQUE ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "contient"
+    AUTH_USER ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "appartient"
+
+    EXAMEN ||--o{ EXAMEN_GROUPES_AUTORISES : "ouvre acces"
+    GROUPE_ACADEMIQUE ||--o{ EXAMEN_GROUPES_AUTORISES : "est autorise"
+
+    EXAMEN ||--o{ SOUMISSION : "recoit"
+    SOUMISSION ||--o| RESULTAT : "0..1 resultat"
+
+    AUTH_USER ||--o{ ACCOUNT_EMAILADDRESS : "emails allauth"
+    ACCOUNT_EMAILADDRESS ||--o{ ACCOUNT_EMAILCONFIRMATION : "confirmations"
+    AUTH_USER ||--o{ SOCIALACCOUNT_SOCIALACCOUNT : "liens oauth"
+    SOCIALACCOUNT_SOCIALAPP ||--o{ SOCIALACCOUNT_SOCIALTOKEN : "emet tokens"
+    SOCIALACCOUNT_SOCIALACCOUNT ||--o{ SOCIALACCOUNT_SOCIALTOKEN : "detient tokens"
+    SOCIALACCOUNT_SOCIALAPP ||--o{ SOCIALACCOUNT_SOCIALAPP_SITES : "publie sur site"
+    DJANGO_SITE ||--o{ SOCIALACCOUNT_SOCIALAPP_SITES : "heberge app"
+
+%% Contraintes fortes
+%% C1 UNIQUE (Soumission.examen_id, Soumission.etudiant_id).
+%% C2 Soumission.code_source OU Soumission.url_depot_git doit etre renseigne.
+%% C3 Soumission autorisee uniquement si:
+%%    - etudiant membre d un groupe autorise
+%%    - now entre Examen.heure_debut et Examen.heure_fin.
+%% C4 tests (url_tests_git/hash_tests) modifies uniquement en BROUILLON.
+%% C5 Webhook /api/webhook/resultats/ exige X-API-TOKEN valide.

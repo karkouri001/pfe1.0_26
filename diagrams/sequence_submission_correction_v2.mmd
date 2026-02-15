@@ -1,0 +1,52 @@
+sequenceDiagram
+    autonumber
+    actor Etudiant
+    participant UI as UI Django (etudiant_examen_detail)
+    participant ACL as Role/Auth checks
+    participant SER as SoumissionSerializer
+    participant DB as Base de donnees
+    participant GH as GitHub API
+    participant CI as Pipeline CI/CD
+    participant WH as ResultatWebhookAPIView
+
+    Etudiant->>UI: POST /etudiant/examens/{id} + code_source
+    UI->>ACL: verifier session + role ETUDIANT
+    ACL-->>UI: autorise
+    UI->>DB: charger examen autorise + fenetre horaire
+    DB-->>UI: examen courant
+
+    UI->>SER: validate(payload, request.user)
+    SER->>DB: verifier groupe autorise
+    SER->>DB: verifier unicite (examen, etudiant)
+
+    alt Validation metier KO
+        SER-->>UI: erreurs (groupe/date/duplicat/code vide)
+        UI-->>Etudiant: message erreur
+    else Validation metier OK
+        SER-->>UI: data valide
+        UI->>DB: create Soumission(statut=EN_TEST)
+        DB-->>UI: soumission id + trace_id
+        UI->>GH: creer branch + push Main.java + metadata.json
+
+        alt Push GitHub KO
+            UI->>DB: delete Soumission
+            UI-->>Etudiant: echec soumission
+        else Push GitHub OK
+            GH-->>UI: repo_url + commit_sha
+            UI->>DB: update Soumission(url_depot_git, hash_commit)
+            UI-->>Etudiant: soumission envoyee, tests en cours
+
+            CI->>GH: cloner repo solutions + repo tests
+            CI->>CI: executer tests unitaires
+            CI->>WH: POST /api/webhook/resultats (token, note, statut_soumission)
+
+            WH->>DB: verifier token + charger soumission
+            alt Token invalide
+                WH-->>CI: 403 Token invalide
+            else Token valide
+                WH->>DB: update_or_create Resultat
+                WH->>DB: update Soumission.statut (CORRIGE|ECHEC)
+                WH-->>CI: 200/201 confirmation
+            end
+        end
+    end

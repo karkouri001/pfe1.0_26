@@ -1,0 +1,104 @@
+classDiagram
+    direction LR
+
+    class Utilisateur {
+        <<Entite>>
+        username
+        email
+        is_active
+    }
+
+    class Profil {
+        <<Entite>>
+        role
+    }
+
+    class GroupeAcademique {
+        <<Entite>>
+        nom
+        annee_academique
+    }
+
+    class Examen {
+        <<Entite>>
+        titre
+        description
+        heure_debut
+        heure_fin
+        statut
+        url_tests_git
+        hash_tests
+        pdf_examen
+    }
+
+    class Soumission {
+        <<Entite>>
+        trace_id
+        code_source
+        url_depot_git
+        hash_commit
+        soumis_le
+        statut
+    }
+
+    class Resultat {
+        <<Entite>>
+        note
+        feedback
+        corrige_le
+    }
+
+    class JournalAudit {
+        <<Entite>>
+        action
+        horodatage
+    }
+
+    class Role {
+        <<Enumeration>>
+        ETUDIANT
+        ENSEIGNANT
+        ADMIN
+    }
+
+    class StatutExamen {
+        <<Enumeration>>
+        BROUILLON
+        PUBLIE
+        EN_COURS
+        FERME
+    }
+
+    class StatutSoumission {
+        <<Enumeration>>
+        EN_ATTENTE
+        EN_TEST
+        CORRIGE
+        ECHEC
+    }
+
+    class ReglesMetier {
+        <<Contraintes>>
+        soumission_unique_par_examen_etudiant
+        soumission_dans_plage_horaire
+        examen_filtre_par_groupes_autorises
+        tests_figes_hors_brouillon
+    }
+
+    Utilisateur "1" --> "0..1" Profil : possede
+    Profil --> Role : prend
+
+    Utilisateur "0..*" --> "0..*" GroupeAcademique : appartient
+    Utilisateur "1" --> "0..*" Examen : cree
+    Examen --> StatutExamen : etat
+
+    Examen "0..*" --> "0..*" GroupeAcademique : autorise
+    Examen "1" --> "0..*" Soumission : recoit
+    Utilisateur "1" --> "0..*" Soumission : depose
+    Soumission --> StatutSoumission : etat
+    Soumission "1" --> "0..1" Resultat : produit
+
+    Utilisateur "0..1" --> "0..*" JournalAudit : trace
+
+    ReglesMetier .. Soumission
+    ReglesMetier .. Examen

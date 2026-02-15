@@ -1,0 +1,94 @@
+erDiagram
+    AUTH_USER {
+        BIGINT id PK
+        VARCHAR username UK
+        VARCHAR email
+        VARCHAR password_hash
+        BOOLEAN is_active
+        DATETIME date_joined
+    }
+
+    PROFIL {
+        BIGINT id PK
+        BIGINT utilisateur_id FK
+        ENUM role
+    }
+
+    GROUPE_ACADEMIQUE {
+        BIGINT id PK
+        VARCHAR nom
+        VARCHAR annee_academique
+    }
+
+    GROUPE_ACADEMIQUE_MEMBRES {
+        BIGINT id PK
+        BIGINT groupeacademique_id FK
+        BIGINT user_id FK
+    }
+
+    EXAMEN {
+        BIGINT id PK
+        VARCHAR titre
+        TEXT description
+        DATETIME heure_debut
+        DATETIME heure_fin
+        ENUM statut
+        BIGINT cree_par_id FK
+        VARCHAR url_tests_git
+        VARCHAR hash_tests
+        VARCHAR pdf_examen
+    }
+
+    EXAMEN_GROUPES_AUTORISES {
+        BIGINT id PK
+        BIGINT examen_id FK
+        BIGINT groupeacademique_id FK
+    }
+
+    SOUMISSION {
+        BIGINT id PK
+        UUID trace_id UK
+        BIGINT examen_id FK
+        BIGINT etudiant_id FK
+        VARCHAR url_depot_git
+        VARCHAR hash_commit
+        TEXT code_source
+        DATETIME soumis_le
+        ENUM statut
+    }
+
+    RESULTAT {
+        BIGINT id PK
+        BIGINT soumission_id FK
+        DECIMAL note
+        TEXT feedback
+        DATETIME corrige_le
+    }
+
+    JOURNAL_AUDIT {
+        BIGINT id PK
+        BIGINT utilisateur_id FK
+        VARCHAR action
+        DATETIME horodatage
+    }
+
+    AUTH_USER ||--o| PROFIL : "possede"
+    AUTH_USER ||--o{ JOURNAL_AUDIT : "declenche"
+    AUTH_USER ||--o{ EXAMEN : "cree"
+    AUTH_USER ||--o{ SOUMISSION : "depose"
+
+    GROUPE_ACADEMIQUE ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "contient"
+    AUTH_USER ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "appartient"
+
+    EXAMEN ||--o{ EXAMEN_GROUPES_AUTORISES : "autorise"
+    GROUPE_ACADEMIQUE ||--o{ EXAMEN_GROUPES_AUTORISES : "est_autorise"
+
+    EXAMEN ||--o{ SOUMISSION : "recoit"
+    SOUMISSION ||--o| RESULTAT : "produit"
+
+%% Contraintes metier majeures (refletees par API/serializers)
+%% 1) Une seule soumission par etudiant et par examen.
+%% 1b) Lien Soumission->Resultat en pratique 1-0..1 (soumission_id unique).
+%% 2) Soumission possible seulement dans la plage horaire de l examen.
+%% 3) Examen lie a des groupes autorises (controle d acces etudiant).
+%% 4) Resultat cree/mis a jour via webhook CI/CD, puis statut Soumission mis a jour.

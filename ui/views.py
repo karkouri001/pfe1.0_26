@@ -149,6 +149,22 @@ def _github_headers():
     }
 
 
+def _normalize_github_repository(value: str) -> str:
+    repo = (value or "").strip()
+    if not repo:
+        return ""
+
+    for prefix in ("https://github.com/", "http://github.com/", "git@github.com:"):
+        if repo.startswith(prefix):
+            repo = repo[len(prefix):]
+            break
+
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+
+    return repo.strip("/")
+
+
 def _github_api_request(method, url, payload=None, headers=None):
     data = None
     if payload is not None:
@@ -232,6 +248,9 @@ def _push_solution_to_github(examen, user, soumission_id, code_source):
     branch = f"student-{username}"
     if not examen.url_tests_git or not examen.hash_tests:
         return False, "Examen sans configuration de tests (URL/Hash).", ""
+    tests_repo = _normalize_github_repository(examen.url_tests_git)
+    if "/" not in tests_repo:
+        return False, "Configuration tests invalide (repo GitHub attendu).", ""
 
     base_dir = f"{solutions_path}/exam_{examen.id}/{username}"
     code_path = f"{base_dir}/Main.java"
@@ -246,7 +265,7 @@ def _push_solution_to_github(examen, user, soumission_id, code_source):
                 "soumission_id": soumission_id,
                 "exam_id": examen.id,
                 "student": username,
-                "tests_repo": examen.url_tests_git,
+                "tests_repo": tests_repo,
                 "tests_ref": examen.hash_tests,
                 "language": "java",
                 "entry_file": "Main.java",

@@ -1,0 +1,42 @@
+sequenceDiagram
+    autonumber
+    actor Enseignant
+    participant UI as UI Django (enseignant_examen_nouveau/detail)
+    participant ACL as Role/Auth checks
+    participant FORM as ExamenForm
+    participant DB as Base de donnees
+    participant API as ExamenViewSet
+    participant SER as ExamenSerializer
+
+    Enseignant->>UI: POST /enseignant/examens/nouveau/
+    UI->>ACL: verifier role ENSEIGNANT|ADMIN
+    ACL-->>UI: autorise
+    UI->>FORM: clean(titre, dates, pdf, tests, groupes)
+
+    alt Form invalide
+        FORM-->>UI: erreurs validation
+        UI-->>Enseignant: afficher erreurs
+    else Form valide
+        FORM-->>UI: donnees valides
+        UI->>DB: create Examen(statut=BROUILLON, cree_par=user)
+        UI->>DB: save M2M groupes_autorises
+        DB-->>UI: examen cree
+        UI-->>Enseignant: confirmation creation
+    end
+
+    Enseignant->>UI: modifier examen (optionnel)
+    UI->>FORM: clean() + regle "tests figes hors BROUILLON"
+    alt Examen deja publie et tests modifies
+        FORM-->>UI: rejet modification tests
+        UI-->>Enseignant: erreur metier
+    else Modification autorisee
+        UI->>DB: update Examen
+        UI-->>Enseignant: examen mis a jour
+    end
+
+    Enseignant->>API: PATCH /api/examens/{id}/ statut=PUBLIE
+    API->>SER: validate(instance, attrs)
+    SER-->>API: valide
+    API->>DB: persist statut PUBLIE
+    DB-->>API: updated
+    API-->>Enseignant: 200 OK

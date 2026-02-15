@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    actor Enseignant
+    participant UI as UI Django (enseignant_examen_nouveau/detail)
+    participant Auth as Controle Auth/Role
+    participant Form as ExamenForm
+    participant API as ExamenViewSet (REST)
+    participant Ser as ExamenSerializer
+    participant DB as Base de donnees
+    actor Admin
+
+    Enseignant->>UI: POST creation examen (BROUILLON)
+    UI->>Auth: verifier role ENSEIGNANT|ADMIN
+    Auth-->>UI: autorise
+    UI->>Form: clean(titre, dates, pdf, tests, groupes)
+
+    alt Form invalide
+        Form-->>UI: erreurs validation
+        UI-->>Enseignant: correction demandee
+    else Form valide
+        UI->>DB: create Examen + save groupes_autorises
+        DB-->>UI: examen cree
+        UI-->>Enseignant: confirmation creation
+    end
+
+    Enseignant->>UI: mise a jour examen brouillon
+    UI->>Form: clean() avant sauvegarde
+    alt Dates incoherentes
+        Form-->>UI: fin <= debut
+        UI-->>Enseignant: refus modification
+    else Donnees coherentes
+        UI->>DB: update Examen
+        DB-->>UI: examen maj
+        UI-->>Enseignant: examen enregistre
+    end
+
+    Admin->>API: PATCH /api/examens/{id}/ statut=PUBLIE
+    API->>Auth: IsAuthenticated + IsEnseignantOrAdmin
+    Auth-->>API: autorise
+    API->>Ser: validate(instance, attrs)
+
+    alt Tentative de changer url_tests_git/hash_tests hors BROUILLON
+        Ser-->>API: ValidationError
+        API-->>Admin: 400 tests figes apres publication
+    else Validation OK
+        API->>DB: persist statut PUBLIE
+        DB-->>API: examen publie
+        API-->>Admin: 200 OK
+    end
+
+    Enseignant->>UI: suit soumissions et resultats
+    UI->>DB: select Soumission + Resultat pour ses examens
+    DB-->>UI: donnees de pilotage
+    UI-->>Enseignant: tableau de suivi

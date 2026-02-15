@@ -22,12 +22,13 @@
     {% if resultats %}
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Examen</th><th>Soumission</th><th>Note</th><th>Feedback</th><th>Corrige le</th></tr></thead>
+          <thead><tr><th>Examen</th><th>Soumission</th><th>username</th><th>Note</th><th>Feedback</th><th>Corrige le</th></tr></thead>
           <tbody>
             {% for r in resultats %}
               <tr>
                 <td class="fw-semibold">{{ r.soumission.examen.titre }}</td>
                 <td><code>#{{ r.soumission.id }}</code></td>
+                <td class="fw-semibold">{{ r.soumission.etudiant.username }}</td>
                 <td class="fw-semibold">{{ r.note }}</td>
                 <td class="small">{{ r.feedback|default:"-" }}</td>
                 <td class="small text-secondary">{{ r.corrige_le }}</td>

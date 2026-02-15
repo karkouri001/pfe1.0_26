@@ -1,0 +1,215 @@
+classDiagram
+    direction LR
+
+    class Model
+    class ModelSerializer
+    class ModelViewSet
+    class APIView
+    class BasePermission
+    class ModelForm
+    class AuthenticationForm
+    class LoginView
+    class View
+
+    class User {
+        +id: bigint
+        +username: str
+        +email: str
+        +is_active: bool
+    }
+
+    class Profil {
+        +role: Role
+        +utilisateur: User
+        +__str__(): str
+    }
+
+    class GroupeAcademique {
+        +nom: str
+        +annee_academique: str
+        +membres: User[]
+        +__str__(): str
+    }
+
+    class Examen {
+        +titre: str
+        +description: text
+        +heure_debut: datetime
+        +heure_fin: datetime
+        +statut: StatutExamen
+        +url_tests_git: str?
+        +hash_tests: str
+        +pdf_examen: file?
+        +cree_par: User
+        +groupes_autorises: GroupeAcademique[]
+        +__str__(): str
+    }
+
+    class Soumission {
+        +trace_id: uuid
+        +code_source: text
+        +url_depot_git: str?
+        +hash_commit: str
+        +soumis_le: datetime
+        +statut: StatutSoumission
+        +examen: Examen
+        +etudiant: User
+        +__str__(): str
+    }
+
+    class Resultat {
+        +note: decimal
+        +feedback: text
+        +corrige_le: datetime
+        +soumission: Soumission
+        +__str__(): str
+    }
+
+    class JournalAudit {
+        +action: str
+        +horodatage: datetime
+        +utilisateur: User?
+        +__str__(): str
+    }
+
+    class Role {
+        <<Enumeration>>
+        ETUDIANT
+        ENSEIGNANT
+        ADMIN
+    }
+
+    class StatutExamen {
+        <<Enumeration>>
+        BROUILLON
+        PUBLIE
+        EN_COURS
+        FERME
+    }
+
+    class StatutSoumission {
+        <<Enumeration>>
+        EN_ATTENTE
+        EN_TEST
+        CORRIGE
+        ECHEC
+    }
+
+    class ExamenSerializer {
+        +validate(attrs)
+    }
+
+    class SoumissionSerializer {
+        +validate(attrs)
+    }
+
+    class ResultatSerializer
+
+    class WebhookResultatSerializer {
+        +soumission
+        +note
+        +feedback
+        +statut_soumission
+    }
+
+    class IsEnseignantOrAdmin {
+        +has_permission(request, view): bool
+    }
+
+    class IsResultatEditor {
+        +has_permission(request, view): bool
+    }
+
+    class ExamenForm {
+        +clean()
+    }
+
+    class EmailOrUsernameAuthenticationForm {
+        +clean()
+    }
+
+    class ExamenViewSet {
+        +get_queryset()
+        +perform_create(serializer)
+    }
+
+    class SoumissionViewSet {
+        +perform_create(serializer)
+    }
+
+    class ResultatViewSet
+
+    class ResultatWebhookAPIView {
+        +post(request)
+    }
+
+    class EmailLoginView
+    class OAuthEmailAutoLoginView
+    class EtudiantExamenDetailFlow {
+        +submit_code(request, examen_id)
+    }
+
+    class GithubSubmissionService {
+        +push_solution_to_github(examen, user, soumission_id, code_source)
+        +ensure_branch(owner, repo, base_branch, branch)
+        +upsert_file(owner, repo, path, content, branch, message)
+    }
+
+    class OAuthSignatureService {
+        +oauth_signature_is_valid(email, ts, sig): bool
+        +safe_next_url(request, next): str
+    }
+
+    Profil --|> Model
+    GroupeAcademique --|> Model
+    Examen --|> Model
+    Soumission --|> Model
+    Resultat --|> Model
+    JournalAudit --|> Model
+
+    ExamenSerializer --|> ModelSerializer
+    SoumissionSerializer --|> ModelSerializer
+    ResultatSerializer --|> ModelSerializer
+    IsEnseignantOrAdmin --|> BasePermission
+    IsResultatEditor --|> BasePermission
+    ExamenForm --|> ModelForm
+    EmailOrUsernameAuthenticationForm --|> AuthenticationForm
+    ExamenViewSet --|> ModelViewSet
+    SoumissionViewSet --|> ModelViewSet
+    ResultatViewSet --|> ModelViewSet
+    ResultatWebhookAPIView --|> APIView
+    EmailLoginView --|> LoginView
+    OAuthEmailAutoLoginView --|> View
+
+    User "1" --> "0..1" Profil : profil
+    Profil --> Role : role
+    User "0..*" --> "0..*" GroupeAcademique : membre
+    User "1" --> "0..*" Examen : cree
+    Examen --> StatutExamen : statut
+    Examen "0..*" --> "0..*" GroupeAcademique : groupes_autorises
+    Examen "1" --> "0..*" Soumission : soumissions
+    User "1" --> "0..*" Soumission : depose
+    Soumission --> StatutSoumission : statut
+    Soumission "1" --> "0..1" Resultat : resultat
+    User "0..1" --> "0..*" JournalAudit : actions
+
+    ExamenSerializer --> Examen : model
+    SoumissionSerializer --> Soumission : model
+    SoumissionSerializer --> Examen : checks_time_and_group
+    ResultatSerializer --> Resultat : model
+    WebhookResultatSerializer --> Soumission : payload
+
+    ExamenViewSet --> ExamenSerializer : uses
+    ExamenViewSet --> IsEnseignantOrAdmin : protects_write
+    SoumissionViewSet --> SoumissionSerializer : uses
+    ResultatViewSet --> ResultatSerializer : uses
+    ResultatViewSet --> IsResultatEditor : protects_write
+    ResultatWebhookAPIView --> WebhookResultatSerializer : validates
+    ResultatWebhookAPIView --> Resultat : update_or_create
+    ResultatWebhookAPIView --> Soumission : update_status
+
+    ExamenForm --> Examen : create_or_update
+    EmailLoginView --> EmailOrUsernameAuthenticationForm : login_form
+    OAuthEmailAutoLoginView --> OAuthSignatureService : validates_link
+    EtudiantExamenDetailFlow --> SoumissionSerializer : validates_payload
+    EtudiantExamenDetailFlow --> GithubSubmissionService : push_solution

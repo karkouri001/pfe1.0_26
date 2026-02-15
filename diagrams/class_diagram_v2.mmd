@@ -1,0 +1,157 @@
+classDiagram
+    direction TB
+
+    class Model
+    class ModelSerializer
+    class ModelViewSet
+    class APIView
+    class BasePermission
+    class ModelForm
+    class User {
+        +id: bigint
+        +username: str
+        +email: str
+        +is_active: bool
+    }
+
+    class Profil {
+        +role: str
+        +utilisateur: User
+        +__str__(): str
+    }
+    class GroupeAcademique {
+        +nom: str
+        +annee_academique: str
+        +membres: User[]
+        +__str__(): str
+    }
+    class Examen {
+        +titre: str
+        +description: text
+        +heure_debut: datetime
+        +heure_fin: datetime
+        +statut: str
+        +url_tests_git: str?
+        +hash_tests: str
+        +pdf_examen: file?
+        +cree_par: User
+        +groupes_autorises: GroupeAcademique[]
+        +__str__(): str
+    }
+    class Soumission {
+        +trace_id: uuid
+        +code_source: text
+        +url_depot_git: str?
+        +hash_commit: str
+        +soumis_le: datetime
+        +statut: str
+        +examen: Examen
+        +etudiant: User
+        +__str__(): str
+    }
+    class Resultat {
+        +note: decimal
+        +feedback: text
+        +corrige_le: datetime
+        +soumission: Soumission
+        +__str__(): str
+    }
+    class JournalAudit {
+        +utilisateur: User?
+        +action: str
+        +horodatage: datetime
+        +__str__(): str
+    }
+
+    class GroupeAcademiqueSerializer
+    class ExamenSerializer {
+        +validate(attrs)
+    }
+    class SoumissionSerializer {
+        +validate(attrs)
+    }
+    class ResultatSerializer
+    class WebhookResultatSerializer
+
+    class IsEnseignantOrAdmin {
+        +has_permission(request, view): bool
+    }
+    class IsResultatEditor {
+        +has_permission(request, view): bool
+    }
+
+    class ExamenForm {
+        +clean()
+    }
+
+    class GroupeAcademiqueViewSet
+    class ExamenViewSet {
+        +get_queryset()
+        +perform_create(serializer)
+    }
+    class SoumissionViewSet {
+        +perform_create(serializer)
+    }
+    class ResultatViewSet
+    class ResultatWebhookAPIView {
+        +post(request)
+    }
+
+    class GithubSubmissionService {
+        +push_solution_to_github(examen, user, soumission_id, code_source)
+        +ensure_branch(owner, repo, base_branch, branch)
+        +upsert_file(owner, repo, path, content, branch, message)
+    }
+
+    Profil --|> Model
+    GroupeAcademique --|> Model
+    Examen --|> Model
+    Soumission --|> Model
+    Resultat --|> Model
+    JournalAudit --|> Model
+
+    GroupeAcademiqueSerializer --|> ModelSerializer
+    ExamenSerializer --|> ModelSerializer
+    SoumissionSerializer --|> ModelSerializer
+    ResultatSerializer --|> ModelSerializer
+
+    IsEnseignantOrAdmin --|> BasePermission
+    IsResultatEditor --|> BasePermission
+
+    ExamenForm --|> ModelForm
+
+    GroupeAcademiqueViewSet --|> ModelViewSet
+    ExamenViewSet --|> ModelViewSet
+    SoumissionViewSet --|> ModelViewSet
+    ResultatViewSet --|> ModelViewSet
+    ResultatWebhookAPIView --|> APIView
+
+    User "1" --> "0..1" Profil : profil
+    User "1" --> "0..*" Examen : cree
+    User "1" --> "0..*" Soumission : depose
+    User "0..1" --> "0..*" JournalAudit : actions
+    User "0..*" --> "0..*" GroupeAcademique : membre
+    Examen "0..*" --> "0..*" GroupeAcademique : groupes_autorises
+    Examen "1" --> "0..*" Soumission : soumissions
+    Soumission "1" --> "0..1" Resultat : resultat
+
+    GroupeAcademiqueSerializer --> GroupeAcademique : model
+    ExamenSerializer --> Examen : model
+    SoumissionSerializer --> Soumission : model
+    SoumissionSerializer --> Examen : validation_acces
+    ResultatSerializer --> Resultat : model
+    WebhookResultatSerializer --> Soumission : payload
+
+    ExamenViewSet --> ExamenSerializer : uses
+    ExamenViewSet --> IsEnseignantOrAdmin : protects
+    SoumissionViewSet --> SoumissionSerializer : uses
+    ResultatViewSet --> ResultatSerializer : uses
+    ResultatViewSet --> IsResultatEditor : protects
+    ResultatWebhookAPIView --> WebhookResultatSerializer : validates
+    ResultatWebhookAPIView --> Resultat : update_or_create
+    ResultatWebhookAPIView --> Soumission : update_statut
+
+    ExamenForm --> Examen : create_update
+    GithubSubmissionService --> Examen : tests_config
+    GithubSubmissionService --> Soumission : remote_commit_data
+    GithubSubmissionService --> User : branch_naming

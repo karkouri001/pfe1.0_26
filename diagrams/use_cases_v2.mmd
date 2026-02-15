@@ -1,0 +1,67 @@
+flowchart LR
+    Etudiant[Acteur Etudiant]
+    Enseignant[Acteur Enseignant]
+    Admin[Acteur Admin]
+    CI[Acteur Externe CI/CD]
+
+    subgraph Plateforme["Systeme: Plateforme d examens"]
+        UC_Login((Se connecter))
+        UC_OAuth((Auto-login OAuth email))
+        UC_Dashboard((Consulter dashboard etudiant))
+        UC_ExamList((Consulter examens autorises))
+        UC_ExamDetail((Voir details examen et PDF))
+        UC_Submit((Soumettre code source))
+        UC_ValidateSubmit((Valider contraintes de soumission))
+        UC_GithubPush((Pousser solution vers GitHub))
+        UC_ResultStudent((Consulter resultats personnels))
+
+        UC_CreateExam((Creer examen))
+        UC_EditExam((Modifier examen brouillon))
+        UC_SetGroups((Associer groupes autorises))
+        UC_SetTests((Configurer url/hash des tests))
+        UC_Publish((Publier examen))
+        UC_FollowSubs((Suivre soumissions))
+        UC_FollowResults((Suivre resultats))
+
+        UC_RunTests((Executer tests automatiques))
+        UC_Webhook((Poster resultat au webhook))
+        UC_ApplyResult((Creer/maj resultat + statut soumission))
+    end
+
+    Etudiant --> UC_Login
+    Etudiant --> UC_OAuth
+    Etudiant --> UC_Dashboard
+    Etudiant --> UC_ExamList
+    Etudiant --> UC_ExamDetail
+    Etudiant --> UC_Submit
+    Etudiant --> UC_ResultStudent
+
+    Enseignant --> UC_Login
+    Enseignant --> UC_CreateExam
+    Enseignant --> UC_EditExam
+    Enseignant --> UC_SetGroups
+    Enseignant --> UC_SetTests
+    Enseignant --> UC_Publish
+    Enseignant --> UC_FollowSubs
+    Enseignant --> UC_FollowResults
+
+    Admin --> UC_Login
+    Admin --> UC_CreateExam
+    Admin --> UC_EditExam
+    Admin --> UC_SetGroups
+    Admin --> UC_SetTests
+    Admin --> UC_Publish
+    Admin --> UC_FollowSubs
+    Admin --> UC_FollowResults
+
+    CI --> UC_RunTests
+    CI --> UC_Webhook
+
+    UC_OAuth -. include .-> UC_Login
+    UC_ExamDetail -. include .-> UC_ExamList
+    UC_Submit -. include .-> UC_ValidateSubmit
+    UC_Submit -. include .-> UC_GithubPush
+    UC_GithubPush -. trigger .-> UC_RunTests
+    UC_Webhook -. include .-> UC_ApplyResult
+    UC_ResultStudent -. depend .-> UC_ApplyResult
+    UC_FollowResults -. depend .-> UC_ApplyResult

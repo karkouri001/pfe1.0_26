@@ -50,7 +50,15 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "change_me")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool("DEBUG", True)
 
-ALLOWED_HOSTS = []
+if DEBUG:
+    # Dev mode: allow temporary tunnel hosts (ngrok/trycloudflare) without blocking webhook callbacks.
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = [
+        host.strip()
+        for host in os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+        if host.strip()
+    ]
 
 
 # Application definition

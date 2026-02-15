@@ -6,6 +6,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from .views import _normalize_github_repository
+
 
 class UIAuthenticationTests(TestCase):
     def setUp(self):
@@ -75,3 +77,21 @@ class UIAuthenticationTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertIsNone(self.client.session.get("_auth_user_id"))
+
+
+class GitHubRepositoryNormalizationTests(TestCase):
+    def test_normalize_https_url(self):
+        repo = _normalize_github_repository(
+            "https://github.com/karkouri001/exam-java-somme-pairs-tests.git"
+        )
+        self.assertEqual(repo, "karkouri001/exam-java-somme-pairs-tests")
+
+    def test_normalize_ssh_url(self):
+        repo = _normalize_github_repository(
+            "git@github.com:karkouri001/exam-java-somme-pairs-tests.git"
+        )
+        self.assertEqual(repo, "karkouri001/exam-java-somme-pairs-tests")
+
+    def test_keep_owner_repo_value(self):
+        repo = _normalize_github_repository("karkouri001/exam-java-somme-pairs-tests")
+        self.assertEqual(repo, "karkouri001/exam-java-somme-pairs-tests")

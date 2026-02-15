@@ -1,0 +1,84 @@
+erDiagram
+    UTILISATEUR {
+        INT identifiant
+        STRING username
+        STRING email
+        BOOL actif
+    }
+
+    PROFIL {
+        INT identifiant
+        ENUM role
+    }
+
+    GROUPE_ACADEMIQUE {
+        INT identifiant
+        STRING nom
+        STRING annee_academique
+    }
+
+    EXAMEN {
+        INT identifiant
+        STRING titre
+        TEXT description
+        DATETIME date_debut
+        DATETIME date_fin
+        ENUM statut
+        STRING reference_tests
+        STRING support_pdf
+    }
+
+    SOUMISSION {
+        INT identifiant
+        UUID trace_id
+        DATETIME date_soumission
+        ENUM statut
+        TEXT code_source
+        STRING url_depot_git
+        STRING hash_commit
+    }
+
+    RESULTAT {
+        INT identifiant
+        DECIMAL note
+        TEXT feedback
+        DATETIME date_correction
+    }
+
+    JOURNAL_AUDIT {
+        INT identifiant
+        STRING action
+        DATETIME horodatage
+        STRING contexte
+    }
+
+    EMAIL_VERIFIE {
+        INT identifiant
+        STRING email
+        BOOL principal
+        BOOL verifie
+    }
+
+    COMPTE_SOCIAL {
+        INT identifiant
+        STRING provider
+        STRING uid_provider
+        DATETIME date_liaison
+    }
+
+    UTILISATEUR ||--o| PROFIL : "possede"
+    UTILISATEUR }o--o{ GROUPE_ACADEMIQUE : "appartient a"
+    UTILISATEUR ||--o{ EXAMEN : "cree"
+    EXAMEN }o--o{ GROUPE_ACADEMIQUE : "autorise pour"
+    EXAMEN ||--o{ SOUMISSION : "recoit"
+    UTILISATEUR ||--o{ SOUMISSION : "soumet"
+    SOUMISSION ||--o| RESULTAT : "produit"
+    UTILISATEUR ||--o{ JOURNAL_AUDIT : "genere"
+    UTILISATEUR ||--o{ EMAIL_VERIFIE : "declare"
+    UTILISATEUR ||--o{ COMPTE_SOCIAL : "lie"
+
+%% Regles conceptuelles
+%% R1 Un utilisateur a au plus un profil metier.
+%% R2 Un examen peut cibler plusieurs groupes et un groupe peut avoir plusieurs examens.
+%% R3 Une soumission appartient a un unique couple (Examen, Etudiant).
+%% R4 Un resultat existe seulement apres correction d une soumission.

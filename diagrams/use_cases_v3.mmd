@@ -1,0 +1,96 @@
+flowchart LR
+    Etudiant[Acteur Etudiant]
+    Enseignant[Acteur Enseignant]
+    Admin[Acteur Admin]
+    OAuth[Service OAuth Google]
+    GitHub[Service GitHub]
+    CI[Service CI/CD]
+
+    subgraph Plateforme["Systeme: Plateforme d examens de programmation"]
+        UC_Login((Se connecter username ou email))
+        UC_OAuthSigned((Auto-login OAuth par lien signe))
+        UC_Logout((Se deconnecter))
+
+        UC_StudentDashboard((Consulter dashboard etudiant))
+        UC_ListAllowedExams((Lister examens autorises))
+        UC_ViewExamDetail((Voir detail examen))
+        UC_DownloadPdf((Consulter PDF examen))
+        UC_SubmitCode((Soumettre code source))
+        UC_ValidateSubmission((Valider contraintes soumission))
+        UC_SaveSubmission((Creer soumission EN_TEST))
+        UC_TrackSubmission((Suivre statut de soumission))
+        UC_ViewOwnResults((Consulter ses resultats))
+
+        UC_CreateDraftExam((Creer examen brouillon))
+        UC_EditExam((Modifier examen))
+        UC_AssignGroups((Associer groupes autorises))
+        UC_ConfigTests((Configurer repo/hash tests))
+        UC_ManageExamPdf((Ajouter/mettre a jour PDF examen))
+        UC_PublishExam((Publier examen))
+        UC_CloseExam((Fermer examen))
+        UC_ViewSubmissions((Consulter soumissions des examens))
+        UC_ViewResults((Consulter resultats des examens))
+
+        UC_PushGithub((Pousser solution vers GitHub))
+        UC_RunPipeline((Executer tests automatiques))
+        UC_PostWebhook((Poster webhook de correction))
+        UC_ApplyWebhookResult((Creer/maj Resultat + statut Soumission))
+        UC_Audit((Tracer action dans journal audit))
+    end
+
+    Etudiant --> UC_Login
+    Etudiant --> UC_OAuthSigned
+    Etudiant --> UC_Logout
+    Etudiant --> UC_StudentDashboard
+    Etudiant --> UC_ListAllowedExams
+    Etudiant --> UC_ViewExamDetail
+    Etudiant --> UC_SubmitCode
+    Etudiant --> UC_TrackSubmission
+    Etudiant --> UC_ViewOwnResults
+
+    Enseignant --> UC_Login
+    Enseignant --> UC_CreateDraftExam
+    Enseignant --> UC_EditExam
+    Enseignant --> UC_AssignGroups
+    Enseignant --> UC_ConfigTests
+    Enseignant --> UC_ManageExamPdf
+    Enseignant --> UC_PublishExam
+    Enseignant --> UC_CloseExam
+    Enseignant --> UC_ViewSubmissions
+    Enseignant --> UC_ViewResults
+
+    Admin --> UC_Login
+    Admin --> UC_CreateDraftExam
+    Admin --> UC_EditExam
+    Admin --> UC_AssignGroups
+    Admin --> UC_ConfigTests
+    Admin --> UC_ManageExamPdf
+    Admin --> UC_PublishExam
+    Admin --> UC_CloseExam
+    Admin --> UC_ViewSubmissions
+    Admin --> UC_ViewResults
+
+    OAuth --> UC_OAuthSigned
+    GitHub --> UC_PushGithub
+    CI --> UC_RunPipeline
+    CI --> UC_PostWebhook
+
+    UC_OAuthSigned -. include .-> UC_Login
+    UC_StudentDashboard -. include .-> UC_ListAllowedExams
+    UC_ViewExamDetail -. include .-> UC_DownloadPdf
+    UC_SubmitCode -. include .-> UC_ValidateSubmission
+    UC_SubmitCode -. include .-> UC_SaveSubmission
+    UC_SaveSubmission -. include .-> UC_PushGithub
+    UC_PushGithub -. trigger .-> UC_RunPipeline
+    UC_RunPipeline -. include .-> UC_PostWebhook
+    UC_PostWebhook -. include .-> UC_ApplyWebhookResult
+    UC_ViewOwnResults -. depend .-> UC_ApplyWebhookResult
+    UC_ViewResults -. depend .-> UC_ApplyWebhookResult
+
+    UC_CreateDraftExam -. include .-> UC_AssignGroups
+    UC_CreateDraftExam -. include .-> UC_ConfigTests
+    UC_EditExam -. include .-> UC_ManageExamPdf
+
+    UC_SubmitCode -. log .-> UC_Audit
+    UC_PublishExam -. log .-> UC_Audit
+    UC_CloseExam -. log .-> UC_Audit
