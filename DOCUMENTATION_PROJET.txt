@@ -137,6 +137,7 @@ Champs:
 - heure_fin (datetime ISO 8601, requis)
 - statut (string, choix: BROUILLON, PUBLIE, EN_COURS, FERME)
 - cree_par (int, id User, requis)
+- pdf_examen (fichier, requis si statut != BROUILLON)
 - url_tests_git (string URL, optionnel)
 - hash_tests (string, commit optionnel)
 - groupes_autorises (liste d ids GroupeAcademique, optionnel)

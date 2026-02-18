@@ -23,13 +23,11 @@
     {% if soumissions %}
       <div class="table-responsive">
         <table class="table align-middle mb-0">
-          <thead><tr><th>Examen</th><th>Trace</th><th>Commit</th><th>Soumis le</th><th>Statut</th></tr></thead>
+          <thead><tr><th>Examen</th><th>Soumis le</th><th>Statut</th></tr></thead>
           <tbody>
             {% for s in soumissions %}
               <tr>
                 <td class="fw-semibold">{{ s.examen.titre }}</td>
-                <td><code>{{ s.trace_id }}</code></td>
-                <td><code>{{ s.hash_commit }}</code></td>
                 <td class="small text-secondary">{{ s.soumis_le }}</td>
                 <td><span class="badge text-bg-secondary">{{ s.statut }}</span></td>
               </tr>

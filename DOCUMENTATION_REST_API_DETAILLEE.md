@@ -126,6 +126,7 @@ Reponse:
 201 Created
 { ... objet cree ... }
 Note: le champ cree_par n est pas dans le body, il est rempli par la vue.
+Regle metier: `pdf_examen` est obligatoire si `statut` n est pas `BROUILLON`.
 
 3) Soumettre un projet (etudiant)
 Requete:

@@ -61,6 +61,23 @@ class ExamenPermissionsTests(BaseAPITestCase):
         examen = Examen.objects.get(id=response.data["id"])
         self.assertEqual(examen.cree_par, self.enseignant)
 
+    def test_examen_non_brouillon_exige_pdf(self):
+        self.client.force_authenticate(user=self.enseignant)
+        now = timezone.now()
+        response = self.client.post(
+            "/api/examens/",
+            {
+                "titre": "Exam sans PDF",
+                "description": "Desc",
+                "heure_debut": (now - timedelta(hours=1)).isoformat(),
+                "heure_fin": (now + timedelta(hours=1)).isoformat(),
+                "statut": "PUBLIE",
+                "groupes_autorises": [],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
 
 class ResultatWebhookTests(BaseAPITestCase):
     def setUp(self):

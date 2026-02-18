@@ -14,11 +14,14 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import re
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.staticfiles.views import serve as staticfiles_serve
 from django.http import HttpResponse
-from django.urls import include, path
+from django.urls import include, path, re_path
 
 
 def accueil(request):
@@ -33,3 +36,15 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+elif settings.SERVE_STATIC_INSECURE:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT, insecure=True)
+    static_prefix = settings.STATIC_URL.lstrip("/")
+    if not static_prefix.endswith("/"):
+        static_prefix += "/"
+    urlpatterns += [
+        re_path(
+            rf"^{re.escape(static_prefix)}(?P<path>.*)$",
+            staticfiles_serve,
+            {"insecure": True},
+        ),
+    ]

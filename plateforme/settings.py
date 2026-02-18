@@ -162,13 +162,35 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SITE_ID = 1
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "").strip()
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "").strip()
+GOOGLE_OAUTH_CLIENT_KEY = os.environ.get("GOOGLE_OAUTH_CLIENT_KEY", "").strip()
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {"access_type": "online"},
+        # Google returns verified emails; this allows trusted email-based auth linking.
+        "VERIFIED_EMAIL": True,
+        "EMAIL_AUTHENTICATION": True,
     }
 }
+if GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET:
+    SOCIALACCOUNT_PROVIDERS["google"]["APP"] = {
+        "client_id": GOOGLE_OAUTH_CLIENT_ID,
+        "secret": GOOGLE_OAUTH_CLIENT_SECRET,
+        "key": GOOGLE_OAUTH_CLIENT_KEY,
+    }
+
+# Skip allauth's intermediate confirmation page and allow direct OAuth redirect.
+SOCIALACCOUNT_LOGIN_ON_GET = True
+# If a verified Google email matches an existing local user, login without password prompt.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+# Block automatic social signup for unknown emails.
+SOCIALACCOUNT_AUTO_SIGNUP = False
+# Allow Google OAuth only for emails that already exist in local accounts.
+SOCIALACCOUNT_ADAPTER = "ui.adapters.ExistingUserOnlySocialAccountAdapter"
 
 
 # Internationalization
@@ -186,9 +208,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+SERVE_STATIC_INSECURE = env_bool("SERVE_STATIC_INSECURE", False)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

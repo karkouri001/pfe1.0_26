@@ -87,11 +87,13 @@ class ExamenForm(forms.ModelForm):
         cleaned_data = super().clean()
         debut = cleaned_data.get("heure_debut")
         fin = cleaned_data.get("heure_fin")
+        statut = cleaned_data.get("statut", getattr(self.instance, "statut", "BROUILLON"))
+        pdf_examen = cleaned_data.get("pdf_examen") or getattr(self.instance, "pdf_examen", None)
         if debut and fin and fin <= debut:
             self.add_error("heure_fin", "La date de fin doit etre apres la date de debut.")
 
-        if not self.instance.pk and not cleaned_data.get("pdf_examen"):
-            self.add_error("pdf_examen", "Le PDF de l examen est obligatoire.")
+        if statut != "BROUILLON" and not pdf_examen:
+            self.add_error("pdf_examen", "Le PDF de l examen est obligatoire hors brouillon.")
 
         if self.instance and self.instance.pk and self.instance.statut != "BROUILLON":
             url_tests_git = cleaned_data.get("url_tests_git")

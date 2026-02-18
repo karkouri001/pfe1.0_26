@@ -18,19 +18,26 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
-from gestion.models import Examen, Resultat, Soumission
+from gestion.models import Examen, Profil, Resultat, Soumission
 from gestion.serializers import SoumissionSerializer
 from .forms import EmailOrUsernameAuthenticationForm, ExamenForm
 
 
 def _google_oauth_configured(request) -> bool:
+    provider_cfg = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get("google", {})
+    app_cfg = provider_cfg.get("APP", {}) if isinstance(provider_cfg, dict) else {}
+    configured_via_settings = bool(app_cfg.get("client_id") and app_cfg.get("secret"))
+
     try:
         from allauth.socialaccount.models import SocialApp
 
         current_site = get_current_site(request)
-        return SocialApp.objects.filter(provider="google", sites=current_site).exists()
+        configured_via_socialapp = SocialApp.objects.filter(
+            provider="google", sites=current_site
+        ).exists()
+        return configured_via_socialapp or configured_via_settings
     except Exception:
-        return False
+        return configured_via_settings
 
 
 def _role(user) -> str:
@@ -133,7 +140,7 @@ class OAuthEmailAutoLoginView(View):
         else:
             messages.error(
                 request,
-                "Plusieurs comptes utilisent cet email. Utilisez username + mot de passe.",
+                "Plusieurs comptes utilisent cet email. Utilisez le nom d'utilisateur + mot de passe.",
             )
         return redirect("ui:login")
 
@@ -283,7 +290,18 @@ def _push_solution_to_github(examen, user, soumission_id, code_source):
 
 @login_required
 def home(request):
-    role = _role(request.user)
+    profil = getattr(request.user, "profil", None)
+    if profil is None:
+        profil, created = Profil.objects.get_or_create(
+            utilisateur=request.user,
+            defaults={"role": "ETUDIANT"},
+        )
+        if created:
+            messages.info(
+                request,
+                "Profil etudiant cree automatiquement pour ce compte.",
+            )
+    role = profil.role
     if role == "ETUDIANT":
         return redirect("ui:etudiant_dashboard")
     if role in ("ENSEIGNANT", "ADMIN"):

@@ -18,9 +18,11 @@ class ExamenSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance
-        if not instance and not attrs.get("pdf_examen"):
+        statut = attrs.get("statut", getattr(instance, "statut", "BROUILLON"))
+        pdf_examen = attrs.get("pdf_examen", getattr(instance, "pdf_examen", None))
+        if statut != "BROUILLON" and not pdf_examen:
             raise serializers.ValidationError(
-                "Le PDF de l examen est obligatoire."
+                "Le PDF de l examen est obligatoire hors brouillon."
             )
         if instance and instance.statut != "BROUILLON":
             url_tests_git = attrs.get("url_tests_git", instance.url_tests_git)
