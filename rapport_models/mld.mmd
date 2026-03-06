@@ -1,0 +1,92 @@
+erDiagram
+    AUTH_USER {
+        BIGINT id
+        VARCHAR username
+        VARCHAR email
+        BOOLEAN is_active
+        DATETIME last_login
+        DATETIME date_joined
+    }
+
+    PROFIL {
+        BIGINT id
+        BIGINT utilisateur_id
+        VARCHAR role
+    }
+
+    GROUPE_ACADEMIQUE {
+        BIGINT id
+        VARCHAR nom
+        VARCHAR annee_academique
+    }
+
+    GROUPE_ACADEMIQUE_MEMBRES {
+        BIGINT id
+        BIGINT groupeacademique_id
+        BIGINT user_id
+    }
+
+    EXAMEN {
+        BIGINT id
+        VARCHAR titre
+        TEXT description
+        DATETIME heure_debut
+        DATETIME heure_fin
+        VARCHAR statut
+        BIGINT cree_par_id
+        VARCHAR url_tests_git
+        CHAR hash_tests_40
+        VARCHAR pdf_examen
+    }
+
+    EXAMEN_GROUPES_AUTORISES {
+        BIGINT id
+        BIGINT examen_id
+        BIGINT groupeacademique_id
+    }
+
+    SOUMISSION {
+        BIGINT id
+        UUID trace_id
+        BIGINT examen_id
+        BIGINT etudiant_id
+        VARCHAR url_depot_git
+        VARCHAR hash_commit
+        TEXT code_source
+        DATETIME soumis_le
+        VARCHAR statut
+    }
+
+    RESULTAT {
+        BIGINT id
+        BIGINT soumission_id
+        DECIMAL note_5_2
+        TEXT feedback
+        DATETIME corrige_le
+    }
+
+    JOURNAL_AUDIT {
+        BIGINT id
+        BIGINT utilisateur_id
+        VARCHAR action
+        DATETIME horodatage
+    }
+
+    AUTH_USER ||--o| PROFIL : "profil applicatif"
+    AUTH_USER ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "membre"
+    GROUPE_ACADEMIQUE ||--o{ GROUPE_ACADEMIQUE_MEMBRES : "contient"
+
+    AUTH_USER ||--o{ EXAMEN : "cree"
+    EXAMEN ||--o{ EXAMEN_GROUPES_AUTORISES : "autorise"
+    GROUPE_ACADEMIQUE ||--o{ EXAMEN_GROUPES_AUTORISES : "est_cible"
+
+    EXAMEN ||--o{ SOUMISSION : "recoit"
+    AUTH_USER ||--o{ SOUMISSION : "depose"
+    SOUMISSION ||--o| RESULTAT : "corrigee_par"
+    AUTH_USER ||--o{ JOURNAL_AUDIT : "actions"
+
+%% Contraintes SQL logiques
+%% C1: UNIQUE (soumission.examen_id, soumission.etudiant_id)
+%% C2: UNIQUE (profil.utilisateur_id)
+%% C3: UNIQUE (resultat.soumission_id)
+%% C4: trace_id est unique

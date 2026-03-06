@@ -1,0 +1,68 @@
+erDiagram
+    UTILISATEUR {
+        INT id
+        STRING username
+        STRING email
+        BOOL is_active
+    }
+
+    PROFIL {
+        INT id
+        STRING role
+    }
+
+    GROUPE_ACADEMIQUE {
+        INT id
+        STRING nom
+        STRING annee_academique
+    }
+
+    EXAMEN {
+        INT id
+        STRING titre
+        TEXT description
+        DATETIME heure_debut
+        DATETIME heure_fin
+        STRING statut
+        STRING url_tests_git
+        STRING hash_tests
+        STRING pdf_examen
+    }
+
+    SOUMISSION {
+        INT id
+        UUID trace_id
+        DATETIME soumis_le
+        STRING statut
+        TEXT code_source
+        STRING url_depot_git
+        STRING hash_commit
+    }
+
+    RESULTAT {
+        INT id
+        DECIMAL note
+        TEXT feedback
+        DATETIME corrige_le
+    }
+
+    JOURNAL_AUDIT {
+        INT id
+        STRING action
+        DATETIME horodatage
+    }
+
+    UTILISATEUR ||--o| PROFIL : "possede"
+    UTILISATEUR }o--o{ GROUPE_ACADEMIQUE : "appartient_a"
+    UTILISATEUR ||--o{ EXAMEN : "cree"
+    EXAMEN }o--o{ GROUPE_ACADEMIQUE : "autorise_pour"
+    EXAMEN ||--o{ SOUMISSION : "recoit"
+    UTILISATEUR ||--o{ SOUMISSION : "depose"
+    SOUMISSION ||--o| RESULTAT : "produit"
+    UTILISATEUR ||--o{ JOURNAL_AUDIT : "declenche"
+
+%% Regles metier importantes
+%% R1: Un utilisateur a au plus un profil metier.
+%% R2: Un etudiant ne peut soumettre qu une seule fois par examen.
+%% R3: Une soumission est autorisee seulement pendant la plage horaire de l examen.
+%% R4: Les tests d un examen ne sont plus modifiables apres publication.

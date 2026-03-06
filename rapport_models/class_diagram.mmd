@@ -1,0 +1,133 @@
+classDiagram
+    direction LR
+
+    class User {
+        +id: bigint
+        +username: str
+        +email: str
+        +is_active: bool
+    }
+
+    class Profil {
+        +role: Role
+    }
+
+    class GroupeAcademique {
+        +nom: str
+        +annee_academique: str
+    }
+
+    class Examen {
+        +titre: str
+        +description: text
+        +heure_debut: datetime
+        +heure_fin: datetime
+        +statut: StatutExamen
+        +url_tests_git: str?
+        +hash_tests: str
+        +pdf_examen: file?
+    }
+
+    class Soumission {
+        +trace_id: uuid
+        +code_source: text
+        +url_depot_git: str?
+        +hash_commit: str
+        +soumis_le: datetime
+        +statut: StatutSoumission
+    }
+
+    class Resultat {
+        +note: decimal
+        +feedback: text
+        +corrige_le: datetime
+    }
+
+    class JournalAudit {
+        +action: str
+        +horodatage: datetime
+    }
+
+    class ExamenSerializer {
+        +validate(attrs)
+    }
+
+    class SoumissionSerializer {
+        +validate(attrs)
+    }
+
+    class ResultatSerializer
+    class WebhookResultatSerializer
+
+    class ExamenViewSet {
+        +get_queryset()
+        +perform_create(serializer)
+    }
+
+    class SoumissionViewSet {
+        +perform_create(serializer)
+    }
+
+    class ResultatViewSet
+
+    class ResultatWebhookAPIView {
+        +post(request)
+    }
+
+    class ExamenForm {
+        +clean()
+    }
+
+    class EmailOrUsernameAuthenticationForm {
+        +clean()
+    }
+
+    class Role {
+        <<Enumeration>>
+        ETUDIANT
+        ENSEIGNANT
+        ADMIN
+    }
+
+    class StatutExamen {
+        <<Enumeration>>
+        BROUILLON
+        PUBLIE
+        EN_COURS
+        FERME
+    }
+
+    class StatutSoumission {
+        <<Enumeration>>
+        EN_ATTENTE
+        EN_TEST
+        CORRIGE
+        ECHEC
+    }
+
+    User "1" --> "0..1" Profil
+    Profil --> Role
+    User "0..*" --> "0..*" GroupeAcademique
+    User "1" --> "0..*" Examen : cree
+    Examen --> StatutExamen
+    Examen "0..*" --> "0..*" GroupeAcademique : groupes_autorises
+    Examen "1" --> "0..*" Soumission
+    User "1" --> "0..*" Soumission : depose
+    Soumission --> StatutSoumission
+    Soumission "1" --> "0..1" Resultat
+    User "0..1" --> "0..*" JournalAudit
+
+    ExamenSerializer --> Examen
+    SoumissionSerializer --> Soumission
+    ResultatSerializer --> Resultat
+    WebhookResultatSerializer --> Soumission
+
+    ExamenViewSet --> ExamenSerializer
+    SoumissionViewSet --> SoumissionSerializer
+    ResultatViewSet --> ResultatSerializer
+    ResultatWebhookAPIView --> WebhookResultatSerializer
+    ResultatWebhookAPIView --> Resultat
+    ResultatWebhookAPIView --> Soumission
+
+    ExamenForm --> Examen
+    EmailOrUsernameAuthenticationForm --> User

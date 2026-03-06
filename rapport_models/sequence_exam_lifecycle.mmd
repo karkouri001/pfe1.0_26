@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    actor Enseignant
+    actor Admin
+    participant UI as UI Django (enseignant_examen_nouveau/detail)
+    participant Auth as Controle Auth/Role
+    participant Form as ExamenForm
+    participant API as ExamenViewSet (REST)
+    participant Ser as ExamenSerializer
+    participant DB as Base de donnees
+
+    Enseignant->>UI: POST creation examen (statut BROUILLON)
+    UI->>Auth: verifier role ENSEIGNANT|ADMIN
+    Auth-->>UI: autorise
+    UI->>Form: clean(titre, dates, pdf, tests, groupes)
+
+    alt Form invalide
+        Form-->>UI: erreurs validation
+        UI-->>Enseignant: afficher erreurs
+    else Form valide
+        UI->>DB: create Examen + save m2m groupes
+        DB-->>UI: examen cree
+        UI-->>Enseignant: confirmation
+    end
+
+    Enseignant->>UI: update examen
+    UI->>Form: clean()
+    alt date_fin <= date_debut
+        Form-->>UI: erreur date
+        UI-->>Enseignant: refus sauvegarde
+    else Donnees coherentes
+        UI->>DB: update Examen
+        DB-->>UI: examen mis a jour
+        UI-->>Enseignant: examen enregistre
+    end
+
+    Admin->>API: PATCH /api/examens/{id} statut=PUBLIE
+    API->>Auth: IsAuthenticated + IsEnseignantOrAdmin
+    Auth-->>API: autorise
+    API->>Ser: validate(instance, attrs)
+
+    alt changement tests apres BROUILLON
+        Ser-->>API: ValidationError
+        API-->>Admin: 400 tests non modifiables
+    else validation OK
+        API->>DB: update statut examen
+        DB-->>API: examen publie
+        API-->>Admin: 200 OK
+    end
+
+    Enseignant->>UI: consulte soumissions/resultats
+    UI->>DB: requetes de suivi
+    DB-->>UI: donnees
+    UI-->>Enseignant: tableau de pilotage

@@ -1,0 +1,64 @@
+sequenceDiagram
+    autonumber
+    actor Etudiant
+    actor Enseignant
+    participant UI as UI Django (etudiant_examen_detail)
+    participant Auth as Controle Auth/Role
+    participant Ser as SoumissionSerializer
+    participant DB as Base de donnees
+    participant GH as GitHub API
+    participant CI as Pipeline CI/CD
+    participant WH as API Webhook Resultats
+
+    Etudiant->>UI: Ouvrir examen puis POST code_source
+    UI->>Auth: verifier session + role ETUDIANT
+    Auth-->>UI: OK
+    UI->>DB: charger examen actif et autorise
+    DB-->>UI: examen
+
+    UI->>Ser: validate(payload, request.user)
+    Ser->>DB: verifier groupe autorise
+    Ser->>DB: verifier plage horaire
+    Ser->>DB: verifier unicite (examen, etudiant)
+
+    alt Validation KO
+        Ser-->>UI: erreurs metier
+        UI-->>Etudiant: message erreur
+    else Validation OK
+        UI->>DB: create Soumission(statut=EN_TEST)
+        DB-->>UI: soumission id + trace_id
+        UI->>GH: upsert Main.java + metadata.json
+
+        alt Push GitHub KO
+            GH-->>UI: erreur API
+            UI->>DB: delete Soumission
+            UI-->>Etudiant: soumission annulee
+        else Push GitHub OK
+            GH-->>UI: repo_url + commit_sha
+            UI->>DB: update Soumission(url_depot_git, hash_commit)
+            UI-->>Etudiant: soumission en cours de test
+
+            CI->>GH: clone repo solutions + repo tests
+            CI->>CI: build + run tests
+            CI->>WH: POST /api/webhook/resultats/ + X-API-TOKEN
+
+            WH->>WH: verifier token
+            alt Token invalide
+                WH-->>CI: 403 Forbidden
+            else Token valide
+                WH->>DB: update_or_create Resultat(note, feedback)
+                WH->>DB: update Soumission.statut(CORRIGE|ECHEC)
+                WH-->>CI: 200/201 OK
+            end
+        end
+    end
+
+    Etudiant->>UI: consulter /etudiant/resultats/
+    UI->>DB: select Resultat par etudiant
+    DB-->>UI: resultats
+    UI-->>Etudiant: note + feedback
+
+    Enseignant->>UI: consulter /enseignant/resultats/
+    UI->>DB: select Resultat par examens enseignant
+    DB-->>UI: resultats filtres
+    UI-->>Enseignant: suivi corrections

@@ -1,0 +1,77 @@
+flowchart LR
+    Etudiant[Acteur Etudiant]
+    Enseignant[Acteur Enseignant]
+    Admin[Acteur Admin]
+    OAuth[Service OAuth]
+    GitHub[Service GitHub]
+    CICD[Service CI/CD]
+
+    subgraph Plateforme["Systeme: Plateforme d examens de programmation"]
+        UC_Login((Se connecter username/email))
+        UC_OAuthLink((Auto-login via lien signe))
+        UC_Logout((Se deconnecter))
+
+        UC_ExamList((Lister examens autorises))
+        UC_ExamDetail((Voir detail examen + PDF))
+        UC_Submit((Soumettre code source))
+        UC_Track((Suivre statut soumission))
+        UC_ViewStudentResults((Consulter ses resultats))
+
+        UC_CreateExam((Creer examen))
+        UC_EditExam((Modifier examen))
+        UC_AssignGroups((Associer groupes autorises))
+        UC_ConfigTests((Configurer tests Git))
+        UC_PublishExam((Publier examen))
+        UC_CloseExam((Fermer examen))
+        UC_ViewTeacherSubs((Consulter soumissions))
+        UC_ViewTeacherResults((Consulter resultats))
+
+        UC_GitPush((Pousser solution vers GitHub))
+        UC_RunTests((Executer pipeline tests))
+        UC_Webhook((Poster webhook resultat))
+        UC_ApplyResult((MAJ Resultat + statut Soumission))
+    end
+
+    Etudiant --> UC_Login
+    Etudiant --> UC_OAuthLink
+    Etudiant --> UC_Logout
+    Etudiant --> UC_ExamList
+    Etudiant --> UC_ExamDetail
+    Etudiant --> UC_Submit
+    Etudiant --> UC_Track
+    Etudiant --> UC_ViewStudentResults
+
+    Enseignant --> UC_Login
+    Enseignant --> UC_CreateExam
+    Enseignant --> UC_EditExam
+    Enseignant --> UC_AssignGroups
+    Enseignant --> UC_ConfigTests
+    Enseignant --> UC_PublishExam
+    Enseignant --> UC_CloseExam
+    Enseignant --> UC_ViewTeacherSubs
+    Enseignant --> UC_ViewTeacherResults
+
+    Admin --> UC_Login
+    Admin --> UC_CreateExam
+    Admin --> UC_EditExam
+    Admin --> UC_AssignGroups
+    Admin --> UC_ConfigTests
+    Admin --> UC_PublishExam
+    Admin --> UC_CloseExam
+    Admin --> UC_ViewTeacherSubs
+    Admin --> UC_ViewTeacherResults
+
+    OAuth --> UC_OAuthLink
+    GitHub --> UC_GitPush
+    CICD --> UC_RunTests
+    CICD --> UC_Webhook
+
+    UC_OAuthLink -. include .-> UC_Login
+    UC_Submit -. include .-> UC_GitPush
+    UC_GitPush -. trigger .-> UC_RunTests
+    UC_RunTests -. include .-> UC_Webhook
+    UC_Webhook -. include .-> UC_ApplyResult
+    UC_ViewStudentResults -. depend .-> UC_ApplyResult
+    UC_ViewTeacherResults -. depend .-> UC_ApplyResult
+    UC_CreateExam -. include .-> UC_AssignGroups
+    UC_CreateExam -. include .-> UC_ConfigTests
