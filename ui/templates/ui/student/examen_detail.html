@@ -48,7 +48,7 @@
           {% csrf_token %}
           <div class="mb-3">
             <label class="form-label">Code source</label>
-            <textarea class="form-control code-editor" name="code_source" rows="14" required placeholder="Ecris ton code ici... (classe publique Main)"></textarea>
+            <textarea class="form-control code-editor" name="code_source" rows="14" maxlength="50000" required placeholder="Ecris ton code ici... (classe publique Main)"></textarea>
           </div>
           <button class="btn btn-primary">Envoyer</button>
         </form>

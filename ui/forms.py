@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 
+from gestion.input_security import clean_plain_text
 from gestion.models import Examen
 
 
@@ -57,6 +58,7 @@ class ExamenForm(forms.ModelForm):
             "pdf_examen",
         ]
         widgets = {
+            "titre": forms.TextInput(attrs={"maxlength": 200}),
             "description": forms.Textarea(attrs={"rows": 4}),
             "heure_debut": forms.DateTimeInput(
                 attrs={"type": "datetime-local"},
@@ -68,6 +70,7 @@ class ExamenForm(forms.ModelForm):
             ),
             "groupes_autorises": forms.CheckboxSelectMultiple(),
             "pdf_examen": forms.ClearableFileInput(),
+            "hash_tests": forms.TextInput(attrs={"maxlength": 40}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -82,6 +85,12 @@ class ExamenForm(forms.ModelForm):
                 continue
             css = field.widget.attrs.get("class", "")
             field.widget.attrs["class"] = (css + " form-control").strip()
+
+    def clean_titre(self):
+        return clean_plain_text(self.cleaned_data.get("titre"), "Le titre")
+
+    def clean_description(self):
+        return clean_plain_text(self.cleaned_data.get("description"), "La description")
 
     def clean(self):
         cleaned_data = super().clean()

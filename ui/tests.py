@@ -130,6 +130,14 @@ class ExamenFormValidationTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("pdf_examen", form.errors)
 
+    def test_titre_with_html_is_invalid(self):
+        data = self._base_data()
+        data["titre"] = "<script>alert(1)</script>"
+        data["statut"] = "BROUILLON"
+        form = ExamenForm(data=data, files={})
+        self.assertFalse(form.is_valid())
+        self.assertIn("titre", form.errors)
+
 
 class GoogleOAuthConfiguredTests(TestCase):
     def setUp(self):
@@ -178,6 +186,14 @@ class HomeRoutingTests(TestCase):
         self.assertRedirects(response, reverse("ui:etudiant_dashboard"))
         profil = Profil.objects.get(utilisateur=user)
         self.assertEqual(profil.role, "ETUDIANT")
+
+
+class BasicSecurityHeadersTests(TestCase):
+    def test_login_page_sets_basic_security_headers(self):
+        response = self.client.get(reverse("ui:login"))
+        self.assertEqual(response.headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertEqual(response.headers.get("Referrer-Policy"), "same-origin")
+        self.assertEqual(response.headers.get("Cross-Origin-Opener-Policy"), "same-origin")
 
 
 class ExistingUserOnlySocialAdapterTests(TestCase):

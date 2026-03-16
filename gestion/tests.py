@@ -78,6 +78,24 @@ class ExamenPermissionsTests(BaseAPITestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_examen_rejette_titre_html(self):
+        self.client.force_authenticate(user=self.enseignant)
+        now = timezone.now()
+        response = self.client.post(
+            "/api/examens/",
+            {
+                "titre": "<script>alert(1)</script>",
+                "description": "Desc",
+                "heure_debut": (now - timedelta(hours=1)).isoformat(),
+                "heure_fin": (now + timedelta(hours=1)).isoformat(),
+                "statut": "BROUILLON",
+                "groupes_autorises": [],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("titre", response.data)
+
 
 class ResultatWebhookTests(BaseAPITestCase):
     def setUp(self):
@@ -137,3 +155,39 @@ class ResultatWebhookTests(BaseAPITestCase):
         self.soumission.refresh_from_db()
         self.assertEqual(self.soumission.statut, "CORRIGE")
         self.assertTrue(Resultat.objects.filter(soumission=self.soumission).exists())
+
+    @override_settings(API_WEBHOOK_TOKEN="test-token")
+    def test_webhook_rejette_feedback_html(self):
+        response = self.client.post(
+            "/api/webhook/resultats/",
+            {
+                "soumission": self.soumission.id,
+                "note": "14.50",
+                "feedback": "<img src=x onerror=alert(1)>",
+                "statut_soumission": "CORRIGE",
+            },
+            format="json",
+            HTTP_X_API_TOKEN="test-token",
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+class SearchInputSanitizationTests(BaseAPITestCase):
+    def setUp(self):
+        self.etudiant = self.create_user_with_role("etu_search", "ETUDIANT")
+        self.enseignant = self.create_user_with_role("ens_search", "ENSEIGNANT")
+        now = timezone.now()
+        self.examen = Examen.objects.create(
+            titre="Algo 1",
+            description="Desc",
+            heure_debut=now - timedelta(hours=1),
+            heure_fin=now + timedelta(hours=1),
+            statut="PUBLIE",
+            cree_par=self.enseignant,
+        )
+
+    def test_teacher_examens_search_ignores_html_input(self):
+        self.client.force_login(self.enseignant)
+        response = self.client.get("/enseignant/examens/", {"q": "<script>alert(1)</script>"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["q"], "")

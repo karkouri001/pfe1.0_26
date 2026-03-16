@@ -12,7 +12,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <h1 class="h4 mb-0">Resultats de mes examens</h1>
   <form class="d-flex gap-2" method="get">
-    <input class="form-control" style="max-width:200px;" name="examen" value="{{ examen_id }}" placeholder="id examen...">
+    <input class="form-control" style="max-width:200px;" name="examen" value="{{ examen_id }}" maxlength="20" inputmode="numeric" placeholder="id examen...">
     <button class="btn btn-outline-secondary">Filtrer</button>
   </form>
 </div>

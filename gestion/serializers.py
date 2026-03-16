@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from .input_security import clean_plain_text, validate_source_code
 from .models import Examen, GroupeAcademique, Resultat, Soumission
 
 
@@ -9,12 +10,24 @@ class GroupeAcademiqueSerializer(serializers.ModelSerializer):
         model = GroupeAcademique
         fields = "__all__"
 
+    def validate_nom(self, value):
+        return clean_plain_text(value, "Le nom du groupe")
+
+    def validate_annee_academique(self, value):
+        return clean_plain_text(value, "L annee academique")
+
 
 class ExamenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Examen
         fields = "__all__"
         read_only_fields = ("cree_par",)
+
+    def validate_titre(self, value):
+        return clean_plain_text(value, "Le titre")
+
+    def validate_description(self, value):
+        return clean_plain_text(value, "La description")
 
     def validate(self, attrs):
         instance = self.instance
@@ -39,6 +52,9 @@ class SoumissionSerializer(serializers.ModelSerializer):
         model = Soumission
         fields = "__all__"
         read_only_fields = ("trace_id", "soumis_le", "etudiant")
+
+    def validate_code_source(self, value):
+        return validate_source_code(value)
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -79,6 +95,9 @@ class ResultatSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("corrige_le",)
 
+    def validate_feedback(self, value):
+        return clean_plain_text(value, "Le commentaire")
+
 
 class WebhookResultatSerializer(serializers.Serializer):
     soumission = serializers.PrimaryKeyRelatedField(
@@ -87,3 +106,6 @@ class WebhookResultatSerializer(serializers.Serializer):
     note = serializers.DecimalField(max_digits=5, decimal_places=2)
     feedback = serializers.CharField(allow_blank=True, required=False)
     statut_soumission = serializers.ChoiceField(choices=["CORRIGE", "ECHEC"])
+
+    def validate_feedback(self, value):
+        return clean_plain_text(value, "Le commentaire")

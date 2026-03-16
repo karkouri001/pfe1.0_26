@@ -18,6 +18,7 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
+from gestion.input_security import clean_digit_filter, clean_search_term
 from gestion.models import Examen, Profil, Resultat, Soumission
 from gestion.serializers import SoumissionSerializer
 from .forms import EmailOrUsernameAuthenticationForm, ExamenForm
@@ -362,7 +363,7 @@ def etudiant_examens(request):
         .distinct()
         .order_by("-heure_debut")
     )
-    q = (request.GET.get("q") or "").strip()
+    q = clean_search_term(request.GET.get("q"))
     if q:
         examens = examens.filter(titre__icontains=q)
     return render(request, "ui/student/examens_list.html", {"examens": examens, "q": q})
@@ -436,7 +437,7 @@ def etudiant_soumissions(request):
         .select_related("examen")
         .order_by("-soumis_le")
     )
-    q = (request.GET.get("q") or "").strip()
+    q = clean_search_term(request.GET.get("q"))
     if q:
         soumissions = soumissions.filter(examen__titre__icontains=q)
     return render(
@@ -459,7 +460,7 @@ def etudiant_resultats(request):
 @role_required("ENSEIGNANT", "ADMIN")
 def enseignant_examens(request):
     examens = _enseignant_examens_queryset(request.user).order_by("-heure_debut")
-    q = (request.GET.get("q") or "").strip()
+    q = clean_search_term(request.GET.get("q"))
     if q:
         examens = examens.filter(titre__icontains=q)
     return render(request, "ui/teacher/examens_list.html", {"examens": examens, "q": q})
@@ -530,8 +531,8 @@ def enseignant_soumissions(request):
         .select_related("examen", "etudiant")
         .order_by("-soumis_le")
     )
-    examen_id = (request.GET.get("examen") or "").strip()
-    if examen_id.isdigit():
+    examen_id = clean_digit_filter(request.GET.get("examen"))
+    if examen_id:
         soumissions = soumissions.filter(examen_id=int(examen_id))
     return render(
         request,
@@ -547,8 +548,8 @@ def enseignant_resultats(request):
         .select_related("soumission__examen")
         .order_by("-corrige_le")
     )
-    examen_id = (request.GET.get("examen") or "").strip()
-    if examen_id.isdigit():
+    examen_id = clean_digit_filter(request.GET.get("examen"))
+    if examen_id:
         resultats = resultats.filter(soumission__examen_id=int(examen_id))
     return render(
         request,
