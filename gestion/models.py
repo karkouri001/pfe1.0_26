@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Profil(models.Model):
@@ -71,6 +72,42 @@ class Examen(models.Model):
 
     def __str__(self) -> str:
         return self.titre
+
+    def statut_attendu(self, now=None) -> str:
+        if self.statut == "BROUILLON":
+            return "BROUILLON"
+
+        current_time = now or timezone.now()
+        if current_time < self.heure_debut:
+            return "PUBLIE"
+        if current_time <= self.heure_fin:
+            return "EN_COURS"
+        return "FERME"
+
+    def synchroniser_statut(self, now=None, save=True) -> str:
+        statut_cible = self.statut_attendu(now=now)
+        if statut_cible != self.statut:
+            self.statut = statut_cible
+            if save and self.pk:
+                self.save(update_fields=["statut"])
+        return self.statut
+
+    @classmethod
+    def synchroniser_statuts_automatiques(cls, now=None, queryset=None) -> int:
+        current_time = now or timezone.now()
+        base_queryset = (queryset or cls.objects.all()).exclude(statut="BROUILLON")
+        updated = 0
+        updated += base_queryset.filter(heure_debut__gt=current_time).exclude(
+            statut="PUBLIE"
+        ).update(statut="PUBLIE")
+        updated += base_queryset.filter(
+            heure_debut__lte=current_time,
+            heure_fin__gte=current_time,
+        ).exclude(statut="EN_COURS").update(statut="EN_COURS")
+        updated += base_queryset.filter(heure_fin__lt=current_time).exclude(
+            statut="FERME"
+        ).update(statut="FERME")
+        return updated
 
 
 class Soumission(models.Model):

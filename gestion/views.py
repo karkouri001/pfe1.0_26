@@ -27,6 +27,7 @@ class ExamenViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        Examen.synchroniser_statuts_automatiques(queryset=queryset)
         profil = getattr(self.request.user, "profil", None)
         if profil and profil.role == "ETUDIANT":
             return queryset.filter(

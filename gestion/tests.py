@@ -97,6 +97,61 @@ class ExamenPermissionsTests(BaseAPITestCase):
         self.assertIn("titre", response.data)
 
 
+class ExamenStatusSynchronizationTests(BaseAPITestCase):
+    def setUp(self):
+        self.enseignant = self.create_user_with_role("ens_sync", "ENSEIGNANT")
+
+    def test_sync_time_based_status_moves_published_exam_to_in_progress(self):
+        now = timezone.now()
+        examen = Examen.objects.create(
+            titre="Exam sync",
+            description="Desc",
+            heure_debut=now - timedelta(minutes=30),
+            heure_fin=now + timedelta(minutes=30),
+            statut="PUBLIE",
+            cree_par=self.enseignant,
+        )
+
+        Examen.synchroniser_statuts_automatiques(now=now)
+
+        examen.refresh_from_db()
+        self.assertEqual(examen.statut, "EN_COURS")
+
+    def test_sync_time_based_status_keeps_brouillon_unchanged(self):
+        now = timezone.now()
+        examen = Examen.objects.create(
+            titre="Exam draft",
+            description="Desc",
+            heure_debut=now - timedelta(days=1),
+            heure_fin=now - timedelta(hours=1),
+            statut="BROUILLON",
+            cree_par=self.enseignant,
+        )
+
+        Examen.synchroniser_statuts_automatiques(now=now)
+
+        examen.refresh_from_db()
+        self.assertEqual(examen.statut, "BROUILLON")
+
+    def test_api_examens_get_synchronizes_status_before_listing(self):
+        now = timezone.now()
+        examen = Examen.objects.create(
+            titre="Exam closed",
+            description="Desc",
+            heure_debut=now - timedelta(hours=2),
+            heure_fin=now - timedelta(hours=1),
+            statut="PUBLIE",
+            cree_par=self.enseignant,
+        )
+
+        self.client.force_authenticate(user=self.enseignant)
+        response = self.client.get("/api/examens/")
+
+        self.assertEqual(response.status_code, 200)
+        examen.refresh_from_db()
+        self.assertEqual(examen.statut, "FERME")
+
+
 class ResultatWebhookTests(BaseAPITestCase):
     def setUp(self):
         self.etudiant = self.create_user_with_role("etu2", "ETUDIANT")

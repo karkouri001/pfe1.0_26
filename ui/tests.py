@@ -10,7 +10,7 @@ from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from gestion.models import Profil
+from gestion.models import Examen, Profil
 from .adapters import ExistingUserOnlySocialAccountAdapter
 from .forms import ExamenForm
 from .views import _google_oauth_configured, _normalize_github_repository
@@ -186,6 +186,34 @@ class HomeRoutingTests(TestCase):
         self.assertRedirects(response, reverse("ui:etudiant_dashboard"))
         profil = Profil.objects.get(utilisateur=user)
         self.assertEqual(profil.role, "ETUDIANT")
+
+
+class ExamenStatusAutoSyncUITests(TestCase):
+    def test_teacher_examens_page_synchronizes_exam_status(self):
+        user_model = get_user_model()
+        enseignant = user_model.objects.create_user(
+            username="enseignant_sync",
+            email="enseignant_sync@example.com",
+            password="TestPass123!",
+        )
+        Profil.objects.create(utilisateur=enseignant, role="ENSEIGNANT")
+
+        now = timezone.now()
+        examen = Examen.objects.create(
+            titre="Exam termine",
+            description="Desc",
+            heure_debut=now - timedelta(hours=2),
+            heure_fin=now - timedelta(hours=1),
+            statut="PUBLIE",
+            cree_par=enseignant,
+        )
+
+        self.client.force_login(enseignant)
+        response = self.client.get(reverse("ui:enseignant_examens"))
+
+        self.assertEqual(response.status_code, 200)
+        examen.refresh_from_db()
+        self.assertEqual(examen.statut, "FERME")
 
 
 class BasicSecurityHeadersTests(TestCase):

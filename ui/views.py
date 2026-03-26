@@ -24,6 +24,10 @@ from gestion.serializers import SoumissionSerializer
 from .forms import EmailOrUsernameAuthenticationForm, ExamenForm
 
 
+def _synchroniser_statuts_examens(queryset=None):
+    Examen.synchroniser_statuts_automatiques(queryset=queryset)
+
+
 def _google_oauth_configured(request) -> bool:
     provider_cfg = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {}).get("google", {})
     app_cfg = provider_cfg.get("APP", {}) if isinstance(provider_cfg, dict) else {}
@@ -48,8 +52,11 @@ def _role(user) -> str:
 
 def _enseignant_examens_queryset(user):
     if _role(user) == "ADMIN":
-        return Examen.objects.all()
-    return Examen.objects.filter(cree_par=user)
+        queryset = Examen.objects.all()
+    else:
+        queryset = Examen.objects.filter(cree_par=user)
+    _synchroniser_statuts_examens(queryset=queryset)
+    return queryset
 
 
 def role_required(*roles):
@@ -323,13 +330,13 @@ def logout_view(request):
 @role_required("ETUDIANT")
 def etudiant_dashboard(request):
     now = timezone.now()
+    examens_base = Examen.objects.filter(groupes_autorises__membres=request.user).distinct()
+    _synchroniser_statuts_examens(queryset=examens_base)
 
     examens_autorises = (
-        Examen.objects.filter(
-            groupes_autorises__membres=request.user,
+        examens_base.filter(
             statut__in=["PUBLIE", "EN_COURS"],
         )
-        .distinct()
     )
 
     examens_en_cours = examens_autorises.filter(
@@ -352,15 +359,15 @@ def etudiant_dashboard(request):
 @role_required("ETUDIANT")
 def etudiant_examens(request):
     now = timezone.now()
+    examens_base = Examen.objects.filter(groupes_autorises__membres=request.user).distinct()
+    _synchroniser_statuts_examens(queryset=examens_base)
     examens = (
-        Examen.objects.filter(
-            groupes_autorises__membres=request.user,
+        examens_base.filter(
             statut__in=["PUBLIE", "EN_COURS"],
             heure_debut__lte=now,
             heure_fin__gte=now,
         )
         .exclude(soumissions__etudiant=request.user)
-        .distinct()
         .order_by("-heure_debut")
     )
     q = clean_search_term(request.GET.get("q"))
@@ -372,13 +379,14 @@ def etudiant_examens(request):
 @role_required("ETUDIANT")
 def etudiant_examen_detail(request, examen_id: int):
     now = timezone.now()
+    examens_base = Examen.objects.filter(groupes_autorises__membres=request.user).distinct()
+    _synchroniser_statuts_examens(queryset=examens_base)
     examen = get_object_or_404(
-        Examen.objects.filter(
-            groupes_autorises__membres=request.user,
+        examens_base.filter(
             statut__in=["PUBLIE", "EN_COURS"],
             heure_debut__lte=now,
             heure_fin__gte=now,
-        ).distinct(),
+        ),
         pk=examen_id,
     )
 
